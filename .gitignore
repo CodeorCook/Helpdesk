@@ -1,0 +1,18 @@
+# Môi trường ảo
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Biến môi trường & cấu hình bảo mật
+.env
+.env.*
+!.env.example
+
+# File cache của Python
+__pycache__/
+*.py[cod]
+*.$py.class
+.pytest_cache/
