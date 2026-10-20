@@ -1,0 +1,637 @@
+<div style="width: 1280px; position: relative; background: linear-gradient(0deg, #F8FAFC 0%, #F8FAFC 100%), white; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+  <div style="align-self: stretch; min-height: 800px; padding-left: 256px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+    <div style="flex: 1 1 0; align-self: stretch; position: relative">
+      <div style="width: 1024px; height: 1372.50px; padding: 32px; left: 0px; top: 64px; position: absolute; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 32px; display: inline-flex">
+        <div style="align-self: stretch; justify-content: space-between; align-items: center; display: inline-flex">
+          <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: inline-flex">
+            <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 24px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 32px; word-wrap: break-word">Tạo phiếu yêu cầu hỗ trợ</div>
+            </div>
+            <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 20px; word-wrap: break-word">Điền đầy đủ thông tin bên dưới để đội ngũ hỗ trợ kỹ thuật có thể tiếp nhận và xử lý nhanh nhất cho bạn.</div>
+            </div>
+          </div>
+          <div style="padding-left: 14px; padding-right: 14px; padding-top: 8px; padding-bottom: 8px; background: white; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.02), 0px 1px 3px rgba(0, 0, 0, 0.04); border-radius: 12px; outline: 1px rgba(226, 232, 240, 0.80) solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
+            <div style="width: 8px; height: 8px; position: relative; justify-content: flex-start; align-items: flex-start; display: flex">
+              <div style="width: 8px; height: 8px; left: 0px; top: 0px; position: absolute; opacity: 0.75; background: #34D399; border-radius: 9999px"></div>
+              <div style="width: 8px; height: 8px; background: #10B981; border-radius: 9999px"></div>
+            </div>
+            <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column"><span style="color: #334155; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Thời gian phản hồi dự kiến: </span><span style="color: #0D9DA4; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">~15 - 30 phút</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+          <div style="align-self: stretch; padding: 32px; background: white; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.02), 0px 1px 3px rgba(0, 0, 0, 0.04); border-radius: 16px; outline: 1px rgba(226, 232, 240, 0.80) solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column"><span style="color: #1E293B; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Tiêu đề phiếu </span><span style="color: #EF4444; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">*</span></div>
+                </div>
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Tóm tắt ngắn gọn vấn đề bạn đang gặp phải</div>
+                </div>
+                <div style="align-self: stretch; padding-top: 15px; padding-bottom: 11px; padding-left: 16px; padding-right: 16px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #CBD5E1 solid; outline-offset: -1px; justify-content: center; align-items: flex-start; display: inline-flex">
+                  <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 400; word-wrap: break-word">Ví dụ: Sự cố lỗi sản phẩm khi nhận hàng, không đăng nhập được tài khoản...</div>
+                  </div>
+                </div>
+              </div>
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column"><span style="color: #1E293B; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Loại yêu cầu </span><span style="color: #EF4444; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">*</span></div>
+                </div>
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Chọn đúng danh mục để chuyển thẳng tới bộ phận chuyên trách</div>
+                </div>
+                <div style="align-self: stretch; padding-top: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                  <div style="align-self: stretch; padding: 14px; background: rgba(240, 251, 251, 0.60); border-radius: 12px; outline: 2px #0D9DA4 solid; outline-offset: -2px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="align-self: stretch; padding-bottom: 6px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: space-between; align-items: center; display: inline-flex">
+                        <div style="width: 28px; height: 28px; background: #E6F6F7; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+                          <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                            <div style="width: 13.33px; height: 10.67px; left: 1.33px; top: 2.67px; position: absolute; outline: 1.33px #0D9DA4 solid; outline-offset: -0.67px"></div>
+                          </div>
+                        </div>
+                        <div style="width: 16px; height: 16px; border-radius: 9999px; outline: 2px #0D9DA4 solid; outline-offset: -2px; justify-content: center; align-items: center; display: flex">
+                          <div style="width: 8px; height: 8px; background: #0D9DA4; border-radius: 9999px"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Hỗ trợ kỹ thuật</div>
+                    </div>
+                    <div style="align-self: stretch; padding-top: 1.25px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; padding-bottom: 0.75px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                        <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16.50px; word-wrap: break-word">Lỗi hệ thống, crash ứng<br/>dụng</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="align-self: stretch; padding-top: 14px; padding-bottom: 32.50px; padding-left: 14px; padding-right: 14px; background: white; border-radius: 12px; outline: 1px #E2E8F0 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="align-self: stretch; padding-bottom: 6px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: space-between; align-items: center; display: inline-flex">
+                        <div style="width: 28px; height: 28px; background: #F1F5F9; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+                          <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                            <div style="width: 10.67px; height: 12px; left: 2.67px; top: 2px; position: absolute; outline: 1.33px #475569 solid; outline-offset: -0.67px"></div>
+                          </div>
+                        </div>
+                        <div style="width: 16px; height: 16px; border-radius: 9999px; border: 1px #CBD5E1 solid"></div>
+                      </div>
+                    </div>
+                    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Đổi trả & Bảo hành</div>
+                    </div>
+                    <div style="align-self: stretch; padding-top: 1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                        <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16.50px; word-wrap: break-word">Hàng lỗi, yêu cầu đổi mới</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="align-self: stretch; padding-top: 14px; padding-bottom: 32.50px; padding-left: 14px; padding-right: 14px; background: white; border-radius: 12px; outline: 1px #E2E8F0 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="align-self: stretch; padding-bottom: 6px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: space-between; align-items: center; display: inline-flex">
+                        <div style="width: 28px; height: 28px; background: #F1F5F9; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+                          <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                            <div style="width: 12px; height: 9.33px; left: 2px; top: 3.33px; position: absolute; outline: 1.33px #475569 solid; outline-offset: -0.67px"></div>
+                          </div>
+                        </div>
+                        <div style="width: 16px; height: 16px; border-radius: 9999px; border: 1px #CBD5E1 solid"></div>
+                      </div>
+                    </div>
+                    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Tài khoản & Hóa đơn</div>
+                    </div>
+                    <div style="align-self: stretch; padding-top: 1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                        <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16.50px; word-wrap: break-word">Nạp tiền, hoàn tiền, xác minh</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="align-self: stretch; padding-top: 14px; padding-bottom: 30.50px; padding-left: 14px; padding-right: 14px; background: white; border-radius: 12px; outline: 1px #E2E8F0 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="align-self: stretch; padding-bottom: 6px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: space-between; align-items: center; display: inline-flex">
+                        <div style="width: 28px; height: 28px; background: #F1F5F9; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+                          <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                            <div style="width: 11.91px; height: 10.67px; left: 2.05px; top: 2px; position: absolute; outline: 1.33px #475569 solid; outline-offset: -0.67px"></div>
+                          </div>
+                        </div>
+                        <div style="width: 16px; height: 16px; border-radius: 9999px; border: 1px #CBD5E1 solid"></div>
+                      </div>
+                    </div>
+                    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Khiếu nại dịch vụ</div>
+                    </div>
+                    <div style="align-self: stretch; padding-top: 1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                        <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16.50px; word-wrap: break-word">Thái độ hoặc tiến độ xử lý</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="align-self: stretch; padding: 14px; background: white; border-radius: 12px; outline: 1px #E2E8F0 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="align-self: stretch; padding-bottom: 6px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: space-between; align-items: center; display: inline-flex">
+                        <div style="width: 28px; height: 28px; background: #F1F5F9; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+                          <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                            <div style="width: 12px; height: 12px; left: 2px; top: 2px; position: absolute; outline: 1.33px #475569 solid; outline-offset: -0.67px"></div>
+                          </div>
+                        </div>
+                        <div style="width: 16px; height: 16px; border-radius: 9999px; border: 1px #CBD5E1 solid"></div>
+                      </div>
+                    </div>
+                    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Yêu cầu khác</div>
+                    </div>
+                    <div style="align-self: stretch; padding-top: 1.25px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                      <div style="align-self: stretch; padding-bottom: 0.75px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                        <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16.50px; word-wrap: break-word">Tư vấn chung, đóng góp ý<br/>kiến</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: flex">
+                <div style="align-self: stretch; justify-content: space-between; align-items: center; display: inline-flex">
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Mức độ ưu tiên</div>
+                  </div>
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Chọn mức độ ảnh hưởng đến công việc của bạn</div>
+                  </div>
+                </div>
+                <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex">
+                  <div style="padding-top: 11px; padding-bottom: 11px; padding-left: 43.70px; padding-right: 43.72px; border-radius: 12px; outline: 1px #E2E8F0 solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 6px; display: flex">
+                    <div style="width: 8px; height: 8px; background: #94A3B8; border-radius: 9999px"></div>
+                    <div style="flex-direction: column; justify-content: flex-start; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word">Thấp</div>
+                    </div>
+                  </div>
+                  <div style="padding-left: 28.53px; padding-right: 28.53px; padding-top: 11px; padding-bottom: 11px; background: rgba(240, 253, 250, 0.50); border-radius: 12px; outline: 1px #99F6E4 solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 6px; display: flex">
+                    <div style="width: 8px; height: 8px; background: #14B8A6; border-radius: 9999px"></div>
+                    <div style="flex-direction: column; justify-content: flex-start; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #115E59; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word">Trung bình</div>
+                    </div>
+                  </div>
+                  <div style="padding-top: 10px; padding-bottom: 10px; padding-left: 44.93px; padding-right: 44.95px; background: #FCE688; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05); border-radius: 12px; outline: 2px #E8C950 solid; outline-offset: -2px; justify-content: center; align-items: center; gap: 6px; display: flex">
+                    <div style="width: 8px; height: 8px; background: #D97706; border-radius: 9999px"></div>
+                    <div style="flex-direction: column; justify-content: flex-start; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Cao</div>
+                    </div>
+                  </div>
+                  <div style="padding-top: 11px; padding-bottom: 11px; padding-left: 31.22px; padding-right: 31.21px; border-radius: 12px; outline: 1px #FECDD3 solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 6px; display: flex">
+                    <div style="width: 8px; height: 8px; background: #F43F5E; border-radius: 9999px"></div>
+                    <div style="flex-direction: column; justify-content: flex-start; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #BE123C; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word">Khẩn cấp</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column"><span style="color: #1E293B; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Mô tả chi tiết sự cố </span><span style="color: #EF4444; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">*</span></div>
+                </div>
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Càng chi tiết các bước xảy ra lỗi sẽ giúp kỹ thuật viên giải quyết càng nhanh</div>
+                </div>
+                <div style="align-self: stretch; padding-top: 4px; padding-bottom: 6px; overflow: hidden; border-radius: 12px; outline: 1px #CBD5E1 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px; background: #F8FAFC; border-bottom: 1px #E2E8F0 solid; justify-content: flex-start; align-items: center; gap: 4px; display: inline-flex">
+                    <div style="padding: 6px; border-radius: 4px; flex-direction: column; justify-content: center; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">B</div>
+                    </div>
+                    <div style="padding: 6px; border-radius: 4px; flex-direction: column; justify-content: center; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-style: italic; font-weight: 400; line-height: 16px; word-wrap: break-word">I</div>
+                    </div>
+                    <div style="padding: 6px; border-radius: 4px; flex-direction: column; justify-content: center; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; text-decoration: line-through; line-height: 16px; word-wrap: break-word">S</div>
+                    </div>
+                    <div style="width: 9px; height: 16px; padding-left: 4px; padding-right: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                      <div style="width: 1px; height: 16px; background: #CBD5E1"></div>
+                    </div>
+                    <div style="padding: 6px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                      <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
+                        <div style="width: 10.50px; height: 7px; left: 1.17px; top: 3.50px; position: absolute; outline: 1.17px #475569 solid; outline-offset: -0.58px"></div>
+                      </div>
+                    </div>
+                    <div style="padding: 6px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                      <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
+                        <div style="width: 9.92px; height: 7px; left: 1.75px; top: 3.50px; position: absolute; outline: 1.17px #475569 solid; outline-offset: -0.58px"></div>
+                      </div>
+                    </div>
+                    <div style="width: 9px; height: 16px; padding-left: 4px; padding-right: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                      <div style="width: 1px; height: 16px; background: #CBD5E1"></div>
+                    </div>
+                    <div style="padding: 6px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                      <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
+                        <div style="width: 11.67px; height: 9.33px; left: 1.17px; top: 2.33px; position: absolute; outline: 1.17px #475569 solid; outline-offset: -0.58px"></div>
+                      </div>
+                    </div>
+                    <div style="padding: 6px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                      <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
+                        <div style="width: 10.50px; height: 10.50px; left: 1.72px; top: 1.78px; position: absolute; outline: 1.17px #475569 solid; outline-offset: -0.58px"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="align-self: stretch; padding-top: 12px; padding-bottom: 112px; padding-left: 16px; padding-right: 16px; background: white; overflow: hidden; justify-content: center; align-items: flex-start; display: inline-flex">
+                    <div style="flex: 1 1 0; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                      <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 20px; word-wrap: break-word">Mô tả chi tiết các bước xảy ra lỗi, thông báo lỗi cụ thể hoặc kết quả mong muốn...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Tệp đính kèm & Ảnh chụp màn hình</div>
+                </div>
+                <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Đính kèm ảnh lỗi giúp chúng tôi hiểu sự cố nhanh hơn gấp 2 lần</div>
+                </div>
+                <div style="align-self: stretch; padding-top: 28px; padding-bottom: 32px; padding-left: 24px; padding-right: 24px; background: rgba(248, 250, 252, 0.50); border-radius: 16px; outline: 2px #CBD5E1 solid; outline-offset: -2px; flex-direction: column; justify-content: flex-start; align-items: center; gap: 3px; display: flex">
+                  <div style="width: 48px; height: 48px; background: #E6F6F7; border-radius: 9999px; justify-content: center; align-items: center; display: inline-flex">
+                    <div style="width: 24px; height: 24px; position: relative; overflow: hidden">
+                      <div style="width: 18.01px; height: 19.95px; left: 3px; top: 2.05px; position: absolute; outline: 2px #0D9DA4 solid; outline-offset: -1px"></div>
+                    </div>
+                  </div>
+                  <div style="align-self: stretch; padding-top: 9px; flex-direction: column; justify-content: flex-start; align-items: center; display: flex">
+                    <div style="text-align: center; justify-content: center; display: flex; flex-direction: column"><span style="color: #0D9DA4; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word">Nhấn để tải lên</span><span style="color: #334155; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word"> hoặc kéo thả ảnh chụp màn hình vào đây</span></div>
+                  </div>
+                  <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: center; display: flex">
+                    <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16.50px; word-wrap: break-word">Hỗ trợ PNG, JPG, PDF, DOCX, ZIP (Tối đa 20MB)</div>
+                  </div>
+                </div>
+                <div style="align-self: stretch; padding: 10px; background: rgba(241, 245, 249, 0.70); border-radius: 12px; outline: 1px rgba(226, 232, 240, 0.80) solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
+                  <div style="justify-content: flex-start; align-items: center; gap: 10px; display: flex">
+                    <div style="width: 28px; height: 28px; background: #CCFBF1; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+                      <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                        <div style="width: 11px; height: 11.97px; left: 2.67px; top: 2.03px; position: absolute; outline: 1.33px #0D9DA4 solid; outline-offset: -0.67px"></div>
+                      </div>
+                    </div>
+                    <div style="overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 6px; display: flex">
+                      <div style="justify-content: center; display: flex; flex-direction: column"><span style="color: #1E293B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word">screenshot_error_login.png</span><span style="color: #1E293B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word"> </span></div>
+                      <div style="justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">(1.2 MB)</div>
+                    </div>
+                    <div style="justify-content: flex-start; align-items: center; gap: 2px; display: flex">
+                      <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
+                        <div style="width: 8.17px; height: 5.83px; left: 2.92px; top: 4.08px; position: absolute; outline: 1.46px #059669 solid; outline-offset: -0.73px"></div>
+                      </div>
+                      <div style="justify-content: center; display: flex; flex-direction: column; color: #059669; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 16px; word-wrap: break-word">Đã tải xong</div>
+                    </div>
+                  </div>
+                  <div style="padding: 4px; border-radius: 6px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                      <div style="width: 10.67px; height: 12px; left: 2.67px; top: 2px; position: absolute; outline: 1.33px #94A3B8 solid; outline-offset: -0.67px"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="align-self: stretch; padding-top: 16px; border-top: 1px #F1F5F9 solid; justify-content: space-between; align-items: center; display: inline-flex">
+                <div style="justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+                  <div style="padding-left: 24px; padding-right: 24px; padding-top: 10px; padding-bottom: 10px; background: #0D9DA4; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05); border-radius: 12px; justify-content: center; align-items: center; gap: 8px; display: flex">
+                    <div style="padding-left: 2.28px; padding-right: 2.30px; flex-direction: column; justify-content: flex-start; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: white; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Gửi yêu cầu<br/>hỗ trợ</div>
+                    </div>
+                    <div style="width: 11px; height: 16px; position: relative; overflow: hidden">
+                      <div style="width: 8.25px; height: 6.42px; left: 1.38px; top: 4.79px; position: absolute; outline: 0.92px white solid; outline-offset: -0.46px"></div>
+                    </div>
+                  </div>
+                  <div style="padding-top: 10px; padding-bottom: 10px; padding-left: 23.48px; padding-right: 23.49px; background: #F1F5F9; border-radius: 12px; flex-direction: column; justify-content: center; align-items: center; display: inline-flex">
+                    <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #334155; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 20px; word-wrap: break-word">Hủy<br/>bỏ</div>
+                  </div>
+                </div>
+                <div style="width: 311.39px; height: 27.50px; max-width: 320px; position: relative">
+                  <div style="left: 0px; top: -0.50px; position: absolute; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 13.75px; word-wrap: break-word">Nhấn "Gửi" đồng nghĩa với việc bạn đồng ý với </div>
+                  <div style="width: 302.78px; height: 26.75px; left: 0px; top: 0px; position: absolute">
+                    <div style="left: 235.33px; top: -0.50px; position: absolute; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; text-decoration: underline; line-height: 13.75px; word-wrap: break-word">Quy chế xử lý</div>
+                    <div style="left: 0px; top: 13.25px; position: absolute; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; text-decoration: underline; line-height: 13.75px; word-wrap: break-word">thông tin hỗ trợ</div>
+                  </div>
+                  <div style="left: 78.76px; top: 13.25px; position: absolute; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 13.75px; word-wrap: break-word">.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex">
+            <div style="align-self: stretch; padding: 24px; background: linear-gradient(148deg, #F0FBFB 0%, #FCFCF0 100%); box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.02), 0px 1px 3px rgba(0, 0, 0, 0.04); overflow: hidden; border-radius: 16px; outline: 1px rgba(13, 157, 164, 0.20) solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
+              <div style="align-self: stretch; justify-content: space-between; align-items: flex-start; display: inline-flex">
+                <div style="width: 40px; height: 40px; background: white; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05); border-radius: 12px; justify-content: center; align-items: center; display: flex">
+                  <div style="width: 20px; height: 20px; position: relative; overflow: hidden">
+                    <div style="width: 13.33px; height: 15px; left: 3.33px; top: 2.50px; position: absolute; outline: 1.67px #0D9DA4 solid; outline-offset: -0.83px"></div>
+                  </div>
+                </div>
+                <div style="padding-left: 10px; padding-right: 10px; padding-top: 2px; padding-bottom: 2px; background: #FCE688; border-radius: 9999px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                  <div style="justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16.50px; word-wrap: break-word">Tức thì</div>
+                </div>
+              </div>
+              <div style="align-self: stretch; padding-top: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Trợ lý AI hỗ trợ tức thì</div>
+              </div>
+              <div style="align-self: stretch; padding-bottom: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 19.50px; word-wrap: break-word">Bạn có thể trao đổi ngay với Trợ lý AI để tra<br/>cứu các mã lỗi phổ biến mà không cần đợi<br/>phản hồi từ nhân viên.</div>
+              </div>
+              <div style="align-self: stretch; padding-left: 16px; padding-right: 16px; padding-top: 10px; padding-bottom: 10px; background: #0D9DA4; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05); border-radius: 12px; justify-content: center; align-items: center; gap: 8px; display: inline-flex">
+                <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
+                  <div style="width: 10.50px; height: 9.33px; left: 1.75px; top: 2.33px; position: absolute; outline: 1.17px white solid; outline-offset: -0.58px"></div>
+                </div>
+                <div style="flex-direction: column; justify-content: flex-start; align-items: center; display: inline-flex">
+                  <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: white; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Hỏi Trợ lý AI trước</div>
+                </div>
+              </div>
+            </div>
+            <div style="align-self: stretch; padding: 24px; background: white; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.02), 0px 1px 3px rgba(0, 0, 0, 0.04); border-radius: 16px; outline: 1px rgba(226, 232, 240, 0.80) solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
+              <div style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
+                <div style="width: 28px; height: 28px; padding-top: 5.50px; padding-bottom: 6.50px; background: #FEF7DA; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+                  <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #B45309; font-size: 12px; font-family: FreeSerif; font-weight: 700; line-height: 16px; word-wrap: break-word">💡</div>
+                </div>
+                <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                  <div style="justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">Mẹo để được hỗ trợ nhanh</div>
+                </div>
+              </div>
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+                <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
+                  <div style="width: 16px; height: 18px; padding-top: 2px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="width: 16px; height: 16px; background: #ECFDF5; border-radius: 9999px; justify-content: center; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #059669; font-size: 10px; font-family: FreeSans; font-weight: 700; line-height: 16.25px; word-wrap: break-word">✓</div>
+                    </div>
+                  </div>
+                  <div style="padding-right: 12.61px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 19.50px; word-wrap: break-word">Chụp rõ ảnh màn hình thông báo lỗi<br/>hoặc đường dẫn URL trang gặp sự cố.</div>
+                  </div>
+                </div>
+                <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
+                  <div style="width: 16px; height: 18px; padding-top: 2px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="width: 16px; height: 16px; background: #ECFDF5; border-radius: 9999px; justify-content: center; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #059669; font-size: 10px; font-family: FreeSans; font-weight: 700; line-height: 16.25px; word-wrap: break-word">✓</div>
+                    </div>
+                  </div>
+                  <div style="padding-right: 21.34px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 19.50px; word-wrap: break-word">Cung cấp mã số đơn hàng, hóa đơn<br/>hoặc số tài khoản liên quan (nếu có).</div>
+                  </div>
+                </div>
+                <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
+                  <div style="width: 16px; height: 18px; padding-top: 2px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="width: 16px; height: 16px; background: #ECFDF5; border-radius: 9999px; justify-content: center; align-items: center; display: inline-flex">
+                      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #059669; font-size: 10px; font-family: FreeSans; font-weight: 700; line-height: 16.25px; word-wrap: break-word">✓</div>
+                    </div>
+                  </div>
+                  <div style="padding-right: 3px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column"><span style="color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 19.50px; word-wrap: break-word">Kiểm tra trước trong </span><span style="color: #0D9DA4; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 19.50px; word-wrap: break-word">Kho hướng dẫn</span><span style="color: #475569; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 19.50px; word-wrap: break-word"> để<br/>giải quyết ngay các sự cố đã có hướng<br/>dẫn từng bước.</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="align-self: stretch; padding: 24px; background: white; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.02), 0px 1px 3px rgba(0, 0, 0, 0.04); border-radius: 16px; outline: 1px rgba(226, 232, 240, 0.80) solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: flex">
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+                <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; text-transform: uppercase; line-height: 16px; letter-spacing: 0.60px; word-wrap: break-word">ĐỘI NGŨ HỖ TRỢ TRỰC TUYẾN</div>
+              </div>
+              <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: flex">
+                <div style="align-self: stretch; padding-bottom: 8px; border-bottom: 1px #F1F5F9 solid; justify-content: space-between; align-items: center; display: inline-flex">
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Thứ Hai - Thứ Bảy:</div>
+                  </div>
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">08:00 - 20:00</div>
+                  </div>
+                </div>
+                <div style="align-self: stretch; padding-bottom: 8px; border-bottom: 1px #F1F5F9 solid; justify-content: space-between; align-items: center; display: inline-flex">
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Chủ Nhật & Ngày lễ:</div>
+                  </div>
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">09:00 - 17:00</div>
+                  </div>
+                </div>
+                <div style="align-self: stretch; padding-top: 4px; justify-content: space-between; align-items: center; display: inline-flex">
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Hotline khẩn cấp:</div>
+                  </div>
+                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                    <div style="justify-content: center; display: flex; flex-direction: column; color: #0D9DA4; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">1900 6868</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="width: 1024px; padding-top: 48px; left: 0px; top: 1436.50px; position: absolute; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+        <div style="align-self: stretch; padding-left: 32px; padding-right: 32px; padding-top: 20px; padding-bottom: 20px; background: white; border-top: 1px rgba(226, 232, 240, 0.80) solid; justify-content: space-between; align-items: center; display: inline-flex">
+          <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">© 2026 Hệ thống quản lý hỗ trợ khách hàng · Dự án học tập</div>
+          </div>
+          <div style="justify-content: flex-start; align-items: center; gap: 24px; display: flex">
+            <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Quyền riêng tư</div>
+            </div>
+            <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">·</div>
+            </div>
+            <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16px; word-wrap: break-word">Điều khoản sử dụng</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="width: 1024px; height: 64px; padding-left: 32px; padding-right: 32px; left: 0px; top: 0px; position: absolute; background: white; border-bottom: 1px rgba(226, 232, 240, 0.80) solid; justify-content: space-between; align-items: center; display: inline-flex">
+        <div style="justify-content: flex-start; align-items: center; display: flex">
+          <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 16px; word-wrap: break-word">Cổng khách hàng</div>
+          </div>
+          <div style="width: 30px; height: 14px; padding-left: 8px; padding-right: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="width: 14px; height: 14px; overflow: hidden; flex-direction: column; justify-content: center; align-items: flex-start; display: flex">
+              <div style="width: 14px; flex: 1 1 0; position: relative; overflow: hidden">
+                <div style="width: 4.08px; height: 8.17px; left: 5.25px; top: 2.92px; position: absolute; outline: 1.17px #94A3B8 solid; outline-offset: -0.58px"></div>
+              </div>
+            </div>
+          </div>
+          <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 16px; word-wrap: break-word">Phiếu hỗ trợ</div>
+          </div>
+          <div style="width: 30px; height: 14px; padding-left: 8px; padding-right: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="width: 14px; height: 14px; overflow: hidden; flex-direction: column; justify-content: center; align-items: flex-start; display: flex">
+              <div style="width: 14px; flex: 1 1 0; position: relative; overflow: hidden">
+                <div style="width: 4.08px; height: 8.17px; left: 5.25px; top: 2.92px; position: absolute; outline: 1.17px #94A3B8 solid; outline-offset: -0.58px"></div>
+              </div>
+            </div>
+          </div>
+          <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 16px; word-wrap: break-word">Tạo phiếu mới</div>
+          </div>
+        </div>
+        <div style="justify-content: flex-start; align-items: center; gap: 16px; display: flex">
+          <div style="width: 320px; position: relative; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="align-self: stretch; padding-top: 8px; padding-bottom: 9px; padding-left: 36px; padding-right: 16px; background: #F8FAFC; overflow: hidden; border-radius: 12px; outline: 1px #E2E8F0 solid; outline-offset: -1px; justify-content: center; align-items: flex-start; display: inline-flex">
+              <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 400; word-wrap: break-word">Tìm mã phiếu, nội dung hỗ trợ...</div>
+              </div>
+            </div>
+            <div style="height: 34px; padding-left: 12px; left: 0px; top: 0px; position: absolute; justify-content: flex-start; align-items: center; display: inline-flex">
+              <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                <div style="width: 12px; height: 12px; left: 2px; top: 2px; position: absolute; outline: 1.33px #94A3B8 solid; outline-offset: -0.67px"></div>
+              </div>
+            </div>
+          </div>
+          <div style="width: 36px; height: 36px; position: relative; background: #F8FAFC; border-radius: 12px; outline: 1px rgba(226, 232, 240, 0.60) solid; outline-offset: -1px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+              <div style="width: 10.67px; height: 12px; left: 2.67px; top: 2px; position: absolute; outline: 1.33px #475569 solid; outline-offset: -0.67px"></div>
+            </div>
+            <div style="width: 8px; height: 8px; left: 21px; top: 7px; position: absolute; background: #EF4444; border-radius: 9999px"></div>
+          </div>
+          <div style="padding-left: 8px; border-left: 1px #E2E8F0 solid; justify-content: flex-start; align-items: center; gap: 8px; display: flex">
+            <div style="width: 32px; height: 32px; padding-top: 7.50px; padding-bottom: 8.50px; background: #E2E8F0; border-radius: 9999px; justify-content: center; align-items: center; display: flex">
+              <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #334155; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">MA</div>
+            </div>
+            <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Minh Anh</div>
+            </div>
+            <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
+              <div style="width: 8.17px; height: 4.08px; left: 2.92px; top: 5.25px; position: absolute; outline: 1.17px #94A3B8 solid; outline-offset: -0.58px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="width: 256px; height: 800px; left: 0px; top: 0px; position: absolute; background: white; overflow: hidden; border-right: 1px rgba(226, 232, 240, 0.80) solid; flex-direction: column; justify-content: space-between; align-items: flex-start; display: flex">
+    <div style="align-self: stretch; padding: 20px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
+      <div style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+        <div style="width: 40px; height: 40px; background: #0D9DA4; box-shadow: 0px 1px 2px rgba(13, 157, 164, 0.30); border-radius: 12px; justify-content: center; align-items: center; display: flex">
+          <div style="width: 20px; height: 20px; position: relative; overflow: hidden">
+            <div style="width: 15px; height: 15px; left: 2.50px; top: 2.50px; position: absolute; outline: 1.67px white solid; outline-offset: -0.83px"></div>
+          </div>
+        </div>
+        <div style="width: 112.81px; height: 33.50px; position: relative">
+          <div style="width: 112.81px; left: 0px; top: -1px; position: absolute; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: #0F172A; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 17.50px; word-wrap: break-word">Hệ thống quản lý</div>
+          </div>
+          <div style="width: 112.81px; left: 0px; top: 17.50px; position: absolute; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 16px; word-wrap: break-word">hỗ trợ khách hàng</div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; padding: 12px; background: rgba(248, 250, 252, 0.80); border-radius: 12px; outline: 1px #F1F5F9 solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+        <div style="width: 36px; height: 36px; padding-top: 9.50px; padding-bottom: 10.50px; background: #E2E8F0; border-radius: 9999px; justify-content: center; align-items: center; display: flex">
+          <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: #334155; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">MA</div>
+        </div>
+        <div style="flex: 1 1 0; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+          <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+            <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Nguyễn Minh Anh</div>
+          </div>
+          <div style="align-self: stretch; height: 16.50px; position: relative; overflow: hidden">
+            <div style="width: 109.24px; left: 0px; top: -1px; position: absolute; justify-content: center; display: flex; flex-direction: column; color: #64748B; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 400; line-height: 16.50px; word-wrap: break-word">Tài khoản khách hàng</div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: flex">
+        <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 10px; font-family: Plus Jakarta Sans; font-weight: 700; text-transform: uppercase; line-height: 15px; letter-spacing: 0.50px; word-wrap: break-word">KHÔNG GIAN CỦA BẠN</div>
+        </div>
+        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
+          <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; border-radius: 12px; justify-content: flex-start; align-items: center; display: inline-flex">
+            <div style="justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+              <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                <div style="width: 10.67px; height: 10.67px; left: 2.67px; top: 2.67px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+              </div>
+              <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 20px; word-wrap: break-word">Tổng quan</div>
+              </div>
+            </div>
+          </div>
+          <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; background: #E6F6F7; border-radius: 12px; justify-content: space-between; align-items: center; display: inline-flex">
+            <div style="justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+              <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                <div style="width: 12px; height: 12px; left: 2px; top: 2px; position: absolute; outline: 1.33px #0D9DA4 solid; outline-offset: -0.67px"></div>
+              </div>
+              <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                <div style="justify-content: center; display: flex; flex-direction: column; color: #0D9DA4; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 20px; word-wrap: break-word">Phiếu của tôi</div>
+              </div>
+            </div>
+            <div style="padding-left: 8px; padding-right: 8px; padding-top: 2px; padding-bottom: 2px; background: #FCE688; border-radius: 9999px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="width: 10.12px; height: 8.33px; background: #1E293B"></div>
+            </div>
+          </div>
+          <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; border-radius: 12px; justify-content: space-between; align-items: center; display: inline-flex">
+            <div style="justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+              <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                <div style="width: 10.67px; height: 12px; left: 2.67px; top: 2px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+              </div>
+              <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 20px; word-wrap: break-word">Thông báo</div>
+              </div>
+            </div>
+            <div style="padding-left: 8px; padding-right: 8px; padding-top: 2px; padding-bottom: 2px; background: #FEF7DA; border-radius: 9999px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #334155; font-size: 11px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 20px; word-wrap: break-word">3</div>
+            </div>
+          </div>
+          <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; border-radius: 12px; justify-content: flex-start; align-items: center; display: inline-flex">
+            <div style="justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+              <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                <div style="width: 12px; height: 9.50px; left: 2px; top: 3.33px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+              </div>
+              <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 20px; word-wrap: break-word">Kho hướng dẫn</div>
+              </div>
+            </div>
+          </div>
+          <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; border-radius: 12px; justify-content: flex-start; align-items: center; display: inline-flex">
+            <div style="justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+              <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+                <div style="width: 12px; height: 12px; left: 2px; top: 2px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+              </div>
+              <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+                <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 20px; word-wrap: break-word">Trợ lý AI</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: flex">
+        <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #94A3B8; font-size: 10px; font-family: Plus Jakarta Sans; font-weight: 700; text-transform: uppercase; line-height: 15px; letter-spacing: 0.50px; word-wrap: break-word">TÀI KHOẢN</div>
+        </div>
+        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
+          <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; border-radius: 12px; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+            <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+              <div style="width: 9.33px; height: 12px; left: 3.33px; top: 2px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+            </div>
+            <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 20px; word-wrap: break-word">Thông tin cá nhân</div>
+            </div>
+          </div>
+          <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; border-radius: 12px; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+            <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+              <div style="width: 12px; height: 12px; left: 2px; top: 2px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+              <div style="width: 4px; height: 4px; left: 6px; top: 6px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+            </div>
+            <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 500; line-height: 20px; word-wrap: break-word">Cài đặt</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="align-self: stretch; padding: 20px; border-top: 1px #F1F5F9 solid; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
+      <div style="align-self: stretch; padding-top: 16px; padding-bottom: 18px; padding-left: 16px; padding-right: 16px; background: linear-gradient(162deg, #F0FBFB 0%, #E8F7F8 100%); overflow: hidden; border-radius: 16px; outline: 1px rgba(13, 157, 164, 0.20) solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7.30px; display: flex">
+        <div style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 6px; display: inline-flex">
+          <div style="width: 8px; height: 8px; background: #0D9DA4; border-radius: 9999px"></div>
+          <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: #0D9DA4; font-size: 10px; font-family: Plus Jakarta Sans; font-weight: 700; text-transform: uppercase; line-height: 15px; letter-spacing: 0.50px; word-wrap: break-word">LUÔN SẴN SÀNG HỖ TRỢ</div>
+          </div>
+        </div>
+        <div style="align-self: stretch; padding-bottom: 0.75px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: #1E293B; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16.50px; word-wrap: break-word">Mọi yêu cầu, đều được lắng<br/>nghe.</div>
+        </div>
+        <div style="padding-top: 6.20px; justify-content: flex-start; align-items: center; gap: 4px; display: inline-flex">
+          <div style="justify-content: center; display: flex; flex-direction: column; color: #0D9DA4; font-size: 12px; font-family: Plus Jakarta Sans; font-weight: 700; line-height: 16px; word-wrap: break-word">Trung tâm trợ giúp</div>
+          <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="width: 7.10px; height: 2.81px; background: #0D9DA4"></div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; padding-left: 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px; border-radius: 12px; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex">
+        <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+          <div style="width: 12px; height: 10.67px; left: 2px; top: 2.67px; position: absolute; outline: 1.33px #64748B solid; outline-offset: -0.67px"></div>
+        </div>
+        <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+          <div style="justify-content: center; display: flex; flex-direction: column; color: #475569; font-size: 14px; font-family: Plus Jakarta Sans; font-weight: 600; line-height: 20px; word-wrap: break-word">Đăng xuất</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

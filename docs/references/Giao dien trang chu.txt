@@ -1,0 +1,466 @@
+<div style="width: 1440px; position: relative; background: white; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+  <div style="align-self: stretch; height: 88px; padding-left: 80px; padding-right: 80px; overflow: hidden; border-bottom: 1px #DCE9E8 solid; justify-content: space-between; align-items: center; display: inline-flex">
+    <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+      <div style="width: 42px; height: 42px; background: #0D9DA4; overflow: hidden; border-radius: 14px; justify-content: center; align-items: center; display: flex">
+        <div style="width: 25px; height: 25px; position: relative; overflow: hidden">
+          <div style="width: 18.75px; height: 20.84px; left: 3.13px; top: 2.08px; position: absolute; outline: 1.80px white solid; outline-offset: -0.90px"></div>
+        </div>
+      </div>
+      <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: inline-flex">
+        <div style="color: #153A3D; font-size: 17px; font-family: Inter; font-weight: 700; word-wrap: break-word">Hệ thống quản lý</div>
+        <div style="color: #617779; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">hỗ trợ khách hàng</div>
+      </div>
+    </div>
+    <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 32px; display: flex">
+      <div style="color: #087D83; font-size: 14px; font-family: Inter; font-weight: 400; word-wrap: break-word">Trang chủ</div>
+      <div style="color: #617779; font-size: 14px; font-family: Inter; font-weight: 500; word-wrap: break-word">Tính năng</div>
+      <div style="color: #617779; font-size: 14px; font-family: Inter; font-weight: 500; word-wrap: break-word">Quy trình</div>
+      <div style="color: #617779; font-size: 14px; font-family: Inter; font-weight: 500; word-wrap: break-word">Câu hỏi thường gặp</div>
+    </div>
+    <div style="height: 52px; padding-left: 22px; padding-right: 22px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 10px; display: flex">
+      <div style="color: #153A3D; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">Đăng nhập</div>
+      <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+        <div style="width: 13.50px; height: 13.50px; left: 2.25px; top: 2.25px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+      </div>
+    </div>
+  </div>
+  <div style="align-self: stretch; height: 740px; padding-top: 88px; padding-bottom: 52px; padding-left: 80px; padding-right: 80px; position: relative; background: linear-gradient(135deg, white 0%, #EFF9F7 65%, #FFFBEA 100%); overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+    <div style="width: 620px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 26px; display: flex">
+      <div style="padding-left: 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px; background: #E7F6F4; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
+        <div style="width: 6px; height: 6px; background: #0D9DA4; border-radius: 9999px"></div>
+        <div style="color: #087D83; font-size: 12px; font-family: Inter; font-weight: 600; word-wrap: break-word">CỔNG HỖ TRỢ KHÁCH HÀNG</div>
+      </div>
+      <div style="align-self: stretch"><span style="color: #153A3D; font-size: 54px; font-family: Inter; font-weight: 700; line-height: 63.72px; word-wrap: break-word">Mọi yêu cầu,<br/></span><span style="color: #0D9DA4; font-size: 54px; font-family: Inter; font-weight: 700; line-height: 63.72px; word-wrap: break-word">đều được lắng nghe.</span></div>
+      <div style="width: 548px; color: #617779; font-size: 17px; font-family: Inter; font-weight: 400; line-height: 28.90px; word-wrap: break-word">Hệ thống quản lý hỗ trợ khách hàng giúp bạn gửi yêu cầu, theo dõi tiến độ và tìm câu trả lời — tất cả trong một nơi, rõ ràng và thuận tiện.</div>
+      <div style="overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex">
+        <div style="height: 52px; padding-left: 22px; padding-right: 22px; background: #0D9DA4; overflow: hidden; border-radius: 8px; outline: 1px #0D9DA4 solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 10px; display: flex">
+          <div style="color: white; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">Gửi yêu cầu hỗ trợ</div>
+          <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+            <div style="width: 7.50px; height: 7.50px; left: 5.25px; top: 5.25px; position: absolute; outline: 1.80px white solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="height: 52px; padding-left: 22px; padding-right: 22px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 10px; display: flex">
+          <div style="color: #153A3D; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">Tra cứu phiếu</div>
+          <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+            <div style="width: 13.50px; height: 13.50px; left: 2.25px; top: 2.25px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+      </div>
+      <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 6px; display: inline-flex">
+        <div style="color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đã có tài khoản?</div>
+        <div style="color: #087D83; font-size: 14px; font-family: Inter; font-weight: 600; word-wrap: break-word">Đăng nhập</div>
+        <div style="width: 15px; height: 15px; position: relative; overflow: hidden">
+          <div style="width: 8.75px; height: 8.75px; left: 3.12px; top: 3.12px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+        </div>
+      </div>
+      <div style="padding-top: 16px; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 26px; display: inline-flex">
+        <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 8px; display: flex">
+          <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+            <div style="width: 15px; height: 15px; left: 1.50px; top: 1.50px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+          <div style="color: #617779; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Dễ dàng gửi yêu cầu</div>
+        </div>
+        <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 8px; display: flex">
+          <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+            <div style="width: 15px; height: 15px; left: 1.50px; top: 1.50px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+          <div style="color: #617779; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Minh bạch tiến độ</div>
+        </div>
+      </div>
+    </div>
+    <img style="width: 584px; height: 390px; left: 772px; top: 56px; position: absolute; border-radius: 24px" src="https://placehold.co/584x390" />
+    <div style="width: 334px; padding: 20px; left: 730px; top: 388px; position: absolute; background: white; box-shadow: 0px 16px 48px rgba(18, 61, 64, 0.10); overflow: hidden; border-radius: 14px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
+      <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
+        <div style="color: #617779; font-size: 12px; font-family: Inter; font-weight: 600; word-wrap: break-word">PHIẾU #HT-1024</div>
+        <div style="padding-left: 8px; padding-right: 8px; padding-top: 5px; padding-bottom: 5px; background: #FFF8DA; overflow: hidden; border-radius: 8px; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="color: #153A3D; font-size: 10px; font-family: Inter; font-weight: 600; word-wrap: break-word">Đang xử lý</div>
+        </div>
+      </div>
+      <div style="color: #153A3D; font-size: 16px; font-family: Inter; font-weight: 400; word-wrap: break-word">Hỗ trợ đăng nhập tài khoản</div>
+      <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 5px; display: inline-flex">
+        <div style="flex: 1 1 0; height: 4px; background: #0D9DA4; border-radius: 2px"></div>
+        <div style="flex: 1 1 0; height: 4px; background: #0D9DA4; border-radius: 2px"></div>
+        <div style="flex: 1 1 0; height: 4px; background: #DCE9E8; border-radius: 2px"></div>
+      </div>
+      <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
+        <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
+          <div style="width: 13.33px; height: 13.33px; left: 1.33px; top: 1.33px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+        </div>
+        <div style="color: #617779; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đã tiếp nhận · Chờ phản hồi tiếp theo</div>
+      </div>
+    </div>
+    <div style="left: 752px; top: 591px; position: absolute; color: #91A6A6; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Giao diện và dữ liệu minh họa</div>
+  </div>
+  <div style="align-self: stretch; padding: 80px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 40px; display: flex">
+    <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+      <div style="color: #087D83; font-size: 12px; font-family: Inter; font-weight: 700; word-wrap: break-word">HỖ TRỢ GỌN GÀNG HƠN</div>
+      <div style="align-self: stretch; color: #153A3D; font-size: 36px; font-family: Inter; font-weight: 700; line-height: 45px; word-wrap: break-word">Bớt chờ đợi. Thêm chủ động.</div>
+      <div style="align-self: stretch; color: #617779; font-size: 16px; font-family: Inter; font-weight: 400; line-height: 25.60px; word-wrap: break-word">Một quy trình thống nhất, để người cần hỗ trợ và người xử lý luôn có cùng thông tin.</div>
+    </div>
+    <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex">
+      <div style="flex: 1 1 0; padding: 28px; background: #F3F9F9; overflow: hidden; border-radius: 14px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
+        <div style="width: 48px; height: 48px; background: white; overflow: hidden; border-radius: 14px; justify-content: center; align-items: center; display: inline-flex">
+          <div style="width: 24px; height: 24px; position: relative; overflow: hidden">
+            <div style="width: 20px; height: 20px; left: 2px; top: 2px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; color: #153A3D; font-size: 20px; font-family: Inter; font-weight: 400; line-height: 26px; word-wrap: break-word">Một nơi cho mọi yêu cầu</div>
+        <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.80px; word-wrap: break-word">Không bỏ sót thông tin giữa nhiều kênh. Mỗi vấn đề được ghi nhận bằng một phiếu hỗ trợ riêng.</div>
+      </div>
+      <div style="flex: 1 1 0; padding: 28px; background: #F3F9F9; overflow: hidden; border-radius: 14px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
+        <div style="width: 48px; height: 48px; background: white; overflow: hidden; border-radius: 14px; justify-content: center; align-items: center; display: inline-flex">
+          <div style="width: 24px; height: 24px; position: relative; overflow: hidden">
+            <div style="width: 18px; height: 18px; left: 3px; top: 3px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; color: #153A3D; font-size: 20px; font-family: Inter; font-weight: 400; line-height: 26px; word-wrap: break-word">Theo dõi thật rõ ràng</div>
+        <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.80px; word-wrap: break-word">Biết yêu cầu đang ở bước nào, xem lịch sử trao đổi và nhận cập nhật khi có phản hồi mới.</div>
+      </div>
+      <div style="flex: 1 1 0; padding: 28px; background: #F3F9F9; overflow: hidden; border-radius: 14px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
+        <div style="width: 48px; height: 48px; background: white; overflow: hidden; border-radius: 14px; justify-content: center; align-items: center; display: inline-flex">
+          <div style="width: 24px; height: 24px; position: relative; overflow: hidden">
+            <div style="width: 20px; height: 20px; left: 2px; top: 2px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; color: #153A3D; font-size: 20px; font-family: Inter; font-weight: 400; line-height: 26px; word-wrap: break-word">Kết nối đúng người</div>
+        <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.80px; word-wrap: break-word">Yêu cầu được phân loại để đội ngũ phụ trách tiếp nhận và hỗ trợ theo đúng nội dung.</div>
+      </div>
+    </div>
+  </div>
+  <div style="align-self: stretch; padding: 80px; background: #F3F9F9; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 48px; display: flex">
+    <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+      <div style="color: #087D83; font-size: 12px; font-family: Inter; font-weight: 700; word-wrap: break-word">TÍNH NĂNG CHÍNH</div>
+      <div style="align-self: stretch; color: #153A3D; font-size: 36px; font-family: Inter; font-weight: 700; line-height: 45px; word-wrap: break-word">Từ tiếp nhận đến giải quyết, trong một hệ thống.</div>
+      <div style="align-self: stretch; color: #617779; font-size: 16px; font-family: Inter; font-weight: 400; line-height: 25.60px; word-wrap: break-word">Công cụ cần thiết cho khách hàng và đội ngũ hỗ trợ, được tổ chức đơn giản, dễ sử dụng.</div>
+    </div>
+    <div style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 64px; display: inline-flex">
+      <div style="width: 660px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 18px; display: inline-flex">
+        <div style="width: 660px; background: white; box-shadow: 0px 16px 48px rgba(18, 61, 64, 0.10); overflow: hidden; border-radius: 14px; outline: 1px #DCE9E8 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="align-self: stretch; height: 60px; padding-left: 24px; padding-right: 24px; overflow: hidden; border-bottom: 1px #DCE9E8 solid; justify-content: space-between; align-items: center; display: inline-flex">
+            <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 9px; display: flex">
+              <div style="width: 21px; height: 21px; position: relative; overflow: hidden">
+                <div style="width: 15.75px; height: 17.50px; left: 2.63px; top: 1.75px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+              </div>
+              <div style="color: #153A3D; font-size: 13px; font-family: Inter; font-weight: 700; word-wrap: break-word">Cổng hỗ trợ</div>
+            </div>
+            <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: flex">
+              <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+                <div style="width: 13.50px; height: 15px; left: 2.25px; top: 1.50px; position: absolute; outline: 1.80px #617779 solid; outline-offset: -0.90px"></div>
+              </div>
+              <div style="width: 30px; height: 30px; background: #E7F6F4; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
+                <div style="color: #087D83; font-size: 11px; font-family: Inter; font-weight: 600; word-wrap: break-word">MA</div>
+              </div>
+            </div>
+          </div>
+          <div style="align-self: stretch; padding: 24px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 22px; display: flex">
+            <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
+              <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 6px; display: inline-flex">
+                <div style="color: #153A3D; font-size: 22px; font-family: Inter; font-weight: 700; word-wrap: break-word">Phiếu hỗ trợ của tôi</div>
+                <div style="color: #617779; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">Quản lý yêu cầu, theo dõi mọi cập nhật.</div>
+              </div>
+              <div style="padding-left: 12px; padding-right: 12px; padding-top: 10px; padding-bottom: 10px; background: #0D9DA4; overflow: hidden; border-radius: 8px; justify-content: flex-start; align-items: flex-start; display: flex">
+                <div style="color: white; font-size: 11px; font-family: Inter; font-weight: 600; word-wrap: break-word">+ Tạo phiếu mới</div>
+              </div>
+            </div>
+            <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex">
+              <div style="flex: 1 1 0; padding: 16px; background: #F3F9F9; overflow: hidden; border-radius: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
+                <div style="color: #153A3D; font-size: 26px; font-family: Inter; font-weight: 400; word-wrap: break-word">04</div>
+                <div style="color: #617779; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tất cả phiếu</div>
+              </div>
+              <div style="flex: 1 1 0; padding: 16px; background: #FFF8DA; overflow: hidden; border-radius: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
+                <div style="color: #153A3D; font-size: 26px; font-family: Inter; font-weight: 400; word-wrap: break-word">02</div>
+                <div style="color: #617779; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đang xử lý</div>
+              </div>
+              <div style="flex: 1 1 0; padding: 16px; background: #E7F6F4; overflow: hidden; border-radius: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
+                <div style="color: #153A3D; font-size: 26px; font-family: Inter; font-weight: 400; word-wrap: break-word">02</div>
+                <div style="color: #617779; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đã giải quyết</div>
+              </div>
+            </div>
+            <div style="align-self: stretch; height: 38px; padding-left: 12px; padding-right: 12px; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 9px; display: inline-flex">
+              <div style="width: 15px; height: 15px; position: relative; overflow: hidden">
+                <div style="width: 11.25px; height: 11.25px; left: 1.88px; top: 1.88px; position: absolute; outline: 1.80px #617779 solid; outline-offset: -0.90px"></div>
+              </div>
+              <div style="color: #617779; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tìm theo mã phiếu hoặc nội dung...</div>
+            </div>
+            <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+              <div style="align-self: stretch; padding-top: 10px; padding-bottom: 10px; overflow: hidden; justify-content: space-between; align-items: flex-start; display: inline-flex">
+                <div style="color: #617779; font-size: 10px; font-family: Inter; font-weight: 600; word-wrap: break-word">MÃ PHIẾU / NỘI DUNG</div>
+                <div style="color: #617779; font-size: 10px; font-family: Inter; font-weight: 600; word-wrap: break-word">TRẠNG THÁI</div>
+              </div>
+              <div style="align-self: stretch; padding-top: 13px; padding-bottom: 13px; overflow: hidden; border-top: 1px #DCE9E8 solid; justify-content: space-between; align-items: center; display: inline-flex">
+                <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 6px; display: inline-flex">
+                  <div style="color: #153A3D; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">Hỗ trợ đăng nhập tài khoản</div>
+                  <div style="color: #617779; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">#HT-1024</div>
+                </div>
+                <div style="padding-left: 9px; padding-right: 9px; padding-top: 6px; padding-bottom: 6px; background: #FFF8DA; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="color: #153A3D; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đang xử lý</div>
+                </div>
+              </div>
+              <div style="align-self: stretch; padding-top: 13px; padding-bottom: 13px; overflow: hidden; border-top: 1px #DCE9E8 solid; justify-content: space-between; align-items: center; display: inline-flex">
+                <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 6px; display: inline-flex">
+                  <div style="color: #153A3D; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">Cập nhật thông tin cá nhân</div>
+                  <div style="color: #617779; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">#HT-1023</div>
+                </div>
+                <div style="padding-left: 9px; padding-right: 9px; padding-top: 6px; padding-bottom: 6px; background: #FFF8DA; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="color: #153A3D; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đang xử lý</div>
+                </div>
+              </div>
+              <div style="align-self: stretch; padding-top: 13px; padding-bottom: 13px; overflow: hidden; border-top: 1px #DCE9E8 solid; justify-content: space-between; align-items: center; display: inline-flex">
+                <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 6px; display: inline-flex">
+                  <div style="color: #153A3D; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">Hướng dẫn sử dụng hệ thống</div>
+                  <div style="color: #617779; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">#HT-1018</div>
+                </div>
+                <div style="padding-left: 9px; padding-right: 9px; padding-top: 6px; padding-bottom: 6px; background: #E7F6F4; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="color: #087D83; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đã giải quyết</div>
+                </div>
+              </div>
+              <div style="align-self: stretch; padding-top: 13px; padding-bottom: 13px; overflow: hidden; border-top: 1px #DCE9E8 solid; justify-content: space-between; align-items: center; display: inline-flex">
+                <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 6px; display: inline-flex">
+                  <div style="color: #153A3D; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">Không nhận được thông báo</div>
+                  <div style="color: #617779; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">#HT-1012</div>
+                </div>
+                <div style="padding-left: 9px; padding-right: 9px; padding-top: 6px; padding-bottom: 6px; background: #E7F6F4; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
+                  <div style="color: #087D83; font-size: 10px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đã giải quyết</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="align-self: stretch; text-align: center; color: #617779; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Giao diện minh họa · Dữ liệu mẫu phục vụ đồ án</div>
+      </div>
+      <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 30px; display: inline-flex">
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex">
+          <div style="width: 42px; height: 42px; background: white; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 22px; height: 22px; position: relative; overflow: hidden">
+              <div style="width: 18.33px; height: 12.83px; left: 1.83px; top: 4.58px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+            </div>
+          </div>
+          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 9px; display: inline-flex">
+            <div style="align-self: stretch; color: #153A3D; font-size: 18px; font-family: Inter; font-weight: 400; line-height: 25.20px; word-wrap: break-word">Tạo và quản lý phiếu hỗ trợ</div>
+            <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.10px; word-wrap: break-word">Mô tả vấn đề, chọn danh mục và đính kèm tài liệu. Mọi trao đổi được lưu cùng phiếu.</div>
+          </div>
+        </div>
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex">
+          <div style="width: 42px; height: 42px; background: white; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 22px; height: 22px; position: relative; overflow: hidden">
+              <div style="width: 18.33px; height: 18.33px; left: 1.83px; top: 1.83px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+            </div>
+          </div>
+          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 9px; display: inline-flex">
+            <div style="align-self: stretch; color: #153A3D; font-size: 18px; font-family: Inter; font-weight: 400; line-height: 25.20px; word-wrap: break-word">Tra cứu tiến độ & nhận thông báo</div>
+            <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.10px; word-wrap: break-word">Tìm phiếu bằng mã yêu cầu, kiểm tra trạng thái và xem phản hồi trong tài khoản.</div>
+          </div>
+        </div>
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex">
+          <div style="width: 42px; height: 42px; background: white; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 22px; height: 22px; position: relative; overflow: hidden">
+              <div style="width: 18.33px; height: 16.50px; left: 1.83px; top: 2.75px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+            </div>
+          </div>
+          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 9px; display: inline-flex">
+            <div style="align-self: stretch; color: #153A3D; font-size: 18px; font-family: Inter; font-weight: 400; line-height: 25.20px; word-wrap: break-word">Kho hướng dẫn & trợ lý AI</div>
+            <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.10px; word-wrap: break-word">Tìm câu trả lời cho vấn đề thường gặp hoặc để trợ lý gợi ý cách gửi yêu cầu.</div>
+          </div>
+        </div>
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex">
+          <div style="width: 42px; height: 42px; background: white; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 22px; height: 22px; position: relative; overflow: hidden">
+              <div style="width: 18.33px; height: 16.50px; left: 1.83px; top: 2.75px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+            </div>
+          </div>
+          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 9px; display: inline-flex">
+            <div style="align-self: stretch; color: #153A3D; font-size: 18px; font-family: Inter; font-weight: 400; line-height: 25.20px; word-wrap: break-word">Phân công và báo cáo tập trung</div>
+            <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.10px; word-wrap: break-word">Đội ngũ hỗ trợ sắp xếp mức ưu tiên, phân công xử lý và theo dõi khối lượng công việc.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="align-self: stretch; padding: 80px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 48px; display: flex">
+    <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+      <div style="color: #087D83; font-size: 12px; font-family: Inter; font-weight: 700; word-wrap: break-word">QUY TRÌNH ĐƠN GIẢN</div>
+      <div style="align-self: stretch; color: #153A3D; font-size: 36px; font-family: Inter; font-weight: 700; line-height: 45px; word-wrap: break-word">Bắt đầu chỉ với 3 bước.</div>
+      <div style="align-self: stretch; color: #617779; font-size: 16px; font-family: Inter; font-weight: 400; line-height: 25.60px; word-wrap: break-word">Từ câu hỏi đầu tiên đến câu trả lời cuối cùng, bạn luôn biết bước tiếp theo là gì.</div>
+    </div>
+    <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 48px; display: inline-flex">
+      <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 20px; display: inline-flex">
+          <div style="width: 52px; height: 52px; background: #E7F6F4; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
+            <div style="color: #087D83; font-size: 17px; font-family: Inter; font-weight: 700; word-wrap: break-word">01</div>
+          </div>
+          <div style="flex: 1 1 0; height: 1px; background: #DCE9E8"></div>
+          <div style="width: 24px; height: 24px; position: relative; overflow: hidden">
+            <div style="width: 18px; height: 20px; left: 4px; top: 2px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; color: #153A3D; font-size: 21px; font-family: Inter; font-weight: 400; word-wrap: break-word">Gửi yêu cầu của bạn</div>
+        <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.80px; word-wrap: break-word">Điền nội dung cần hỗ trợ, chọn danh mục và cung cấp thông tin liên hệ để nhận phản hồi.</div>
+      </div>
+      <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 20px; display: inline-flex">
+          <div style="width: 52px; height: 52px; background: #FCE688; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
+            <div style="color: #087D83; font-size: 17px; font-family: Inter; font-weight: 700; word-wrap: break-word">02</div>
+          </div>
+          <div style="flex: 1 1 0; height: 1px; background: #DCE9E8"></div>
+          <div style="width: 24px; height: 24px; position: relative; overflow: hidden">
+            <div style="width: 20px; height: 18px; left: 2px; top: 3px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; color: #153A3D; font-size: 21px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tiếp nhận & xử lý</div>
+        <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.80px; word-wrap: break-word">Đội ngũ phụ trách xem xét yêu cầu. Bạn có thể bổ sung thông tin trong quá trình trao đổi.</div>
+      </div>
+      <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 20px; display: inline-flex">
+          <div style="width: 52px; height: 52px; background: #E7F6F4; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
+            <div style="color: #087D83; font-size: 17px; font-family: Inter; font-weight: 700; word-wrap: break-word">03</div>
+          </div>
+          <div style="flex: 1 1 0; height: 1px; background: #DCE9E8"></div>
+          <div style="width: 24px; height: 24px; position: relative; overflow: hidden">
+            <div style="width: 20px; height: 20px; left: 2px; top: 2px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; color: #153A3D; font-size: 21px; font-family: Inter; font-weight: 400; word-wrap: break-word">Theo dõi & hoàn tất</div>
+        <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.80px; word-wrap: break-word">Tra cứu bằng mã phiếu, xem kết quả xử lý và đánh giá trải nghiệm sau khi vấn đề được giải quyết.</div>
+      </div>
+    </div>
+  </div>
+  <div style="align-self: stretch; padding-left: 80px; padding-right: 80px; padding-top: 72px; padding-bottom: 72px; background: #F3F9F9; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 80px; display: inline-flex">
+    <div style="width: 400px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+      <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+        <div style="color: #087D83; font-size: 12px; font-family: Inter; font-weight: 700; word-wrap: break-word">GIẢI ĐÁP NHANH</div>
+        <div style="align-self: stretch; color: #153A3D; font-size: 36px; font-family: Inter; font-weight: 700; line-height: 45px; word-wrap: break-word">Bạn cần biết thêm?</div>
+        <div style="align-self: stretch; color: #617779; font-size: 16px; font-family: Inter; font-weight: 400; line-height: 25.60px; word-wrap: break-word">Những thông tin cơ bản để bắt đầu sử dụng cổng hỗ trợ.</div>
+      </div>
+    </div>
+    <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
+      <div style="align-self: stretch; padding: 22px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 20px; display: inline-flex">
+          <div style="flex: 1 1 0; color: #153A3D; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">Làm thế nào để gửi yêu cầu hỗ trợ?</div>
+          <div style="width: 18px; height: 18px; position: relative; overflow: hidden"></div>
+        </div>
+        <div style="align-self: stretch; color: #617779; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.10px; word-wrap: break-word">Chọn “Gửi yêu cầu hỗ trợ”, điền thông tin và mô tả vấn đề. Hãy lưu mã phiếu sau khi gửi để thuận tiện tra cứu.</div>
+      </div>
+      <div style="align-self: stretch; padding: 22px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 20px; display: inline-flex">
+          <div style="flex: 1 1 0; color: #153A3D; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">Tôi có thể tra cứu phiếu ở đâu?</div>
+          <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+            <div style="width: 10.50px; height: 10.50px; left: 3.75px; top: 3.75px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; padding: 22px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 20px; display: inline-flex">
+          <div style="flex: 1 1 0; color: #153A3D; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">Cần chuẩn bị thông tin gì khi gửi yêu cầu?</div>
+          <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+            <div style="width: 10.50px; height: 10.50px; left: 3.75px; top: 3.75px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+    <div style="align-self: stretch; padding-left: 80px; padding-right: 80px; padding-top: 60px; padding-bottom: 60px; background: #E7F6F4; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
+      <div style="width: 740px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
+        <div style="align-self: stretch; color: #153A3D; font-size: 32px; font-family: Inter; font-weight: 700; word-wrap: break-word">Có vấn đề cần giải quyết? Bắt đầu tại đây.</div>
+        <div style="align-self: stretch; color: #617779; font-size: 15px; font-family: Inter; font-weight: 400; line-height: 24px; word-wrap: break-word">Gửi yêu cầu để thông tin của bạn được tiếp nhận và theo dõi đầy đủ.</div>
+      </div>
+      <div style="height: 52px; padding-left: 22px; padding-right: 22px; background: #0D9DA4; overflow: hidden; border-radius: 8px; outline: 1px #0D9DA4 solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 10px; display: flex">
+        <div style="color: white; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">Gửi yêu cầu hỗ trợ</div>
+        <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
+          <div style="width: 7.50px; height: 7.50px; left: 5.25px; top: 5.25px; position: absolute; outline: 1.80px white solid; outline-offset: -0.90px"></div>
+        </div>
+      </div>
+    </div>
+    <div style="align-self: stretch; padding-top: 56px; padding-bottom: 28px; padding-left: 80px; padding-right: 80px; background: #123D40; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 44px; display: flex">
+      <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: flex-start; display: inline-flex">
+        <div style="width: 460px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 22px; display: inline-flex">
+          <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+            <div style="width: 42px; height: 42px; background: white; overflow: hidden; border-radius: 14px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 25px; height: 25px; position: relative; overflow: hidden">
+                <div style="width: 18.75px; height: 20.84px; left: 3.13px; top: 2.08px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+              </div>
+            </div>
+            <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: inline-flex">
+              <div style="color: white; font-size: 17px; font-family: Inter; font-weight: 700; word-wrap: break-word">Hệ thống quản lý</div>
+              <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">hỗ trợ khách hàng</div>
+            </div>
+          </div>
+          <div style="width: 400px; color: #DCE9E8; font-size: 14px; font-family: Inter; font-weight: 400; line-height: 23.80px; word-wrap: break-word">Hệ thống quản lý hỗ trợ khách hàng. Đồ án xây dựng cổng tiếp nhận, xử lý và theo dõi yêu cầu hỗ trợ tập trung.</div>
+          <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; overflow: hidden; border-radius: 8px; outline: 1px #426467 solid; outline-offset: -1px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+            <div style="color: #FCE688; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Dự án học tập · Giao diện minh họa</div>
+          </div>
+        </div>
+        <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 18px; display: inline-flex">
+          <div style="color: white; font-size: 14px; font-family: Inter; font-weight: 400; word-wrap: break-word">Khám phá</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tính năng</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Quy trình hỗ trợ</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Câu hỏi thường gặp</div>
+        </div>
+        <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 18px; display: inline-flex">
+          <div style="color: white; font-size: 14px; font-family: Inter; font-weight: 400; word-wrap: break-word">Hỗ trợ</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Gửi yêu cầu hỗ trợ</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tra cứu phiếu</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Hướng dẫn sử dụng</div>
+        </div>
+        <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 18px; display: inline-flex">
+          <div style="color: white; font-size: 14px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tài khoản</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Đăng nhập</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Quyền riêng tư</div>
+          <div style="color: #DCE9E8; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">Điều khoản sử dụng</div>
+        </div>
+      </div>
+      <div style="align-self: stretch; height: 1px; background: #426467"></div>
+      <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: flex-start; display: inline-flex">
+        <div style="color: #DCE9E8; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">© 2026 Hệ thống quản lý hỗ trợ khách hàng · Dự án học tập</div>
+        <div style="color: #DCE9E8; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">Thiết kế hướng đến trải nghiệm hỗ trợ rõ ràng.</div>
+      </div>
+    </div>
+  </div>
+  <div style="width: 332px; left: 1084px; top: 506px; position: absolute; background: white; box-shadow: 0px 8px 32px rgba(18, 61, 64, 0.16); overflow: hidden; border-radius: 14px; outline: 1px #DCE9E8 solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+    <div style="align-self: stretch; padding: 16px; background: linear-gradient(90deg, #0D9DA4 0%, #FCE688 100%); overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+      <div style="width: 36px; height: 36px; background: rgba(255, 255, 255, 0.85); overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+        <div style="width: 23px; height: 23px; position: relative; overflow: hidden">
+          <div style="width: 19.17px; height: 15.33px; left: 1.92px; top: 3.83px; position: absolute; outline: 1.80px #153A3D solid; outline-offset: -0.90px"></div>
+        </div>
+      </div>
+      <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: inline-flex">
+        <div style="color: #153A3D; font-size: 15px; font-family: Inter; font-weight: 700; word-wrap: break-word">Trợ lý AI</div>
+        <div style="color: #153A3D; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Sẵn sàng hướng dẫn bạn</div>
+      </div>
+      <div style="width: 17px; height: 17px; position: relative; overflow: hidden"></div>
+    </div>
+    <div style="align-self: stretch; padding: 16px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 13px; display: flex">
+      <div style="align-self: stretch; padding: 13px; background: #F3F9F9; overflow: hidden; border-radius: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+        <div style="align-self: stretch; color: #153A3D; font-size: 12px; font-family: Inter; font-weight: 400; line-height: 19.20px; word-wrap: break-word">Xin chào! Tôi có thể hướng dẫn bạn gửi yêu cầu và tra cứu phiếu hỗ trợ. Bạn cần giúp gì?</div>
+      </div>
+      <div style="color: #617779; font-size: 11px; font-family: Inter; font-weight: 600; word-wrap: break-word">CÂU HỎI NHANH</div>
+      <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: flex">
+        <div style="align-self: stretch; padding-left: 11px; padding-right: 11px; padding-top: 9px; padding-bottom: 9px; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
+          <div style="color: #087D83; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Làm sao để gửi yêu cầu?</div>
+          <div style="width: 13px; height: 13px; position: relative; overflow: hidden">
+            <div style="width: 3.25px; height: 6.50px; left: 4.88px; top: 3.25px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; padding-left: 11px; padding-right: 11px; padding-top: 9px; padding-bottom: 9px; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
+          <div style="color: #087D83; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tra cứu trạng thái phiếu ở đâu?</div>
+          <div style="width: 13px; height: 13px; position: relative; overflow: hidden">
+            <div style="width: 3.25px; height: 6.50px; left: 4.88px; top: 3.25px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+        <div style="align-self: stretch; padding-left: 11px; padding-right: 11px; padding-top: 9px; padding-bottom: 9px; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
+          <div style="color: #087D83; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Tôi quên mật khẩu, phải làm gì?</div>
+          <div style="width: 13px; height: 13px; position: relative; overflow: hidden">
+            <div style="width: 3.25px; height: 6.50px; left: 4.88px; top: 3.25px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; height: 39px; padding-left: 11px; padding-right: 11px; overflow: hidden; border-radius: 8px; outline: 1px #DCE9E8 solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
+        <div style="color: #617779; font-size: 11px; font-family: Inter; font-weight: 400; word-wrap: break-word">Nhập câu hỏi của bạn...</div>
+        <div style="width: 17px; height: 17px; position: relative; overflow: hidden">
+          <div style="width: 14.17px; height: 14.17px; left: 1.42px; top: 1.41px; position: absolute; outline: 1.80px #0D9DA4 solid; outline-offset: -0.90px"></div>
+        </div>
+      </div>
+      <div style="align-self: stretch; text-align: center; color: #617779; font-size: 9px; font-family: Inter; font-weight: 400; word-wrap: break-word">AI có thể sai. Vui lòng kiểm tra thông tin.</div>
+    </div>
+  </div>
+</div>

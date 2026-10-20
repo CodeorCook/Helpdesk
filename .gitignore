@@ -16,3 +16,10 @@ __pycache__/
 *.py[cod]
 *.$py.class
 .pytest_cache/
+# Frontend build/cache
+node_modules/
+dist/
+*.tsbuildinfo
+test-results/
+playwright-report/
+storage/

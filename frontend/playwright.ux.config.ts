@@ -1,0 +1,2 @@
+import { defineConfig,devices } from '@playwright/test';
+export default defineConfig({testDir:'./ux-tests',outputDir:'./test-results/ux',workers:1,retries:0,timeout:120000,use:{actionTimeout:15000,baseURL:'http://localhost:5174',trace:'off',video:'off'},projects:[{name:'desktop',use:{...devices['Desktop Chrome']}},{name:'mobile',use:{...devices['iPhone 13'],defaultBrowserType:'chromium'}}],webServer:{command:'npm run dev -- --mode database-test',url:'http://localhost:5174',reuseExistingServer:false,timeout:30000}});
