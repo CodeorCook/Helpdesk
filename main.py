@@ -9,6 +9,7 @@ from api.routes.auth import router as auth_router
 from api.routes.customer import router as customer_router
 from api.routes.staff import router as staff_router
 from api.routes.manager import router as manager_router
+from api.routes.chatbot import router as chatbot_router
 from core.uploads import BodyLimitMiddleware
 
 app = FastAPI (
@@ -21,6 +22,7 @@ app.include_router(auth_router)
 app.include_router(customer_router)
 app.include_router(staff_router)
 app.include_router(manager_router)
+app.include_router(chatbot_router)
 app.add_middleware(BodyLimitMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=allowed_origins(), allow_credentials=True,
                    allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type", "X-CSRF-Token"])

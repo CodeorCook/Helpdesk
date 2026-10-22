@@ -59,28 +59,33 @@ def catalog(user_id, kind):
 
 def create_ticket(user_id, body: TicketCreate):
     with customer_cursor(user_id) as cur:
-        execute(cur, "SELECT ht_ma FROM {loai_ho_tro} WHERE ht_ma=%s AND dang_hoat_dong FOR SHARE", (body.type_id,))
-        if cur.fetchone() is None:
-            raise HTTPException(422, "Loại hỗ trợ không hợp lệ hoặc đã ngừng sử dụng.")
-        try:
-            order = int(os.getenv("DEFAULT_PRIORITY_ORDER", "2"))
-        except ValueError as exc:
-            raise ConfigurationError("DEFAULT_PRIORITY_ORDER phải là số thứ tự ưu tiên hợp lệ.") from exc
-        execute(cur, "SELECT mdut_ma FROM {muc_do_uu_tien} WHERE thu_tu=%s", (order,))
-        priority = cur.fetchone()
-        if priority is None:
-            raise ConfigurationError("Thiếu mức ưu tiên mặc định trong danh mục.")
-        execute(cur, "SELECT tt_ma FROM {trang_thai} WHERE ma=%s", ("MOI",))
-        status = cur.fetchone()
-        if status is None:
-            raise ConfigurationError("Thiếu trạng thái MOI trong danh mục.")
-        execute(cur, """INSERT INTO {phieu_ho_tro} (khach_hang_ma,nguon_tao,mdut_ma,ht_ma,tt_ma,tieu_de,mo_ta)
-            VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING phieu_ma""",
-            (user_id, "KHACH_HANG", priority["mdut_ma"], body.type_id, status["tt_ma"], body.title, body.description))
-        ticket_id = cur.fetchone()["phieu_ma"]
-        add_history(cur, ticket_id, None, status["tt_ma"], user_id)
-        attach_sla(cur,ticket_id)
-        return ticket_row(cur, user_id, ticket_id)
+        return create_ticket_in_transaction(cur, user_id, body)
+
+
+def create_ticket_in_transaction(cur, user_id, body: TicketCreate):
+    """Caller must own a customer_cursor transaction; keeps ticket/history/SLA atomic."""
+    execute(cur, "SELECT ht_ma FROM {loai_ho_tro} WHERE ht_ma=%s AND dang_hoat_dong FOR SHARE", (body.type_id,))
+    if cur.fetchone() is None:
+        raise HTTPException(422, "Loại hỗ trợ không hợp lệ hoặc đã ngừng sử dụng.")
+    try:
+        order = int(os.getenv("DEFAULT_PRIORITY_ORDER", "2"))
+    except ValueError as exc:
+        raise ConfigurationError("DEFAULT_PRIORITY_ORDER phải là số thứ tự ưu tiên hợp lệ.") from exc
+    execute(cur, "SELECT mdut_ma FROM {muc_do_uu_tien} WHERE thu_tu=%s", (order,))
+    priority = cur.fetchone()
+    if priority is None:
+        raise ConfigurationError("Thiếu mức ưu tiên mặc định trong danh mục.")
+    execute(cur, "SELECT tt_ma FROM {trang_thai} WHERE ma=%s", ("MOI",))
+    status = cur.fetchone()
+    if status is None:
+        raise ConfigurationError("Thiếu trạng thái MOI trong danh mục.")
+    execute(cur, """INSERT INTO {phieu_ho_tro} (khach_hang_ma,nguon_tao,mdut_ma,ht_ma,tt_ma,tieu_de,mo_ta)
+        VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING phieu_ma""",
+        (user_id, "KHACH_HANG", priority["mdut_ma"], body.type_id, status["tt_ma"], body.title, body.description))
+    ticket_id = cur.fetchone()["phieu_ma"]
+    add_history(cur, ticket_id, None, status["tt_ma"], user_id)
+    attach_sla(cur,ticket_id)
+    return ticket_row(cur, user_id, ticket_id)
 
 
 def add_history(cur, ticket_id, old_status, new_status, user_id):

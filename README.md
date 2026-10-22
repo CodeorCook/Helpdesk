@@ -300,3 +300,90 @@ Set-Location ..
 ```
 
 Chi tiết kiểm thử và giới hạn: [UX_TEST_RESULTS.md](docs/UX_TEST_RESULTS.md). Không có biến môi trường mới.
+## Giai đoạn 5 — Trợ lý AI Gemini + FAQ
+
+Widget **Trợ lý AI Helpdesk** chỉ có trong không gian Khách hàng (nút góc dưới phải); không sửa hội thoại khách–nhân viên, sidebar hoặc quy trình Phương án A. Khách hỏi FAQ, xem phiên/lịch sử của chính mình, chủ động đồng ý lập bản nháp, chỉnh sửa/hủy và **Xác nhận tạo phiếu**. Phiếu dùng cùng service tạo phiếu hiện tại: MOI, chủ từ cookie, ưu tiên mặc định, SLA hiện có và chờ nhân viên Tiếp nhận. Chatbot không tra cứu đơn hàng/tồn kho, quyết định bảo hành/hoàn tiền hoặc tự phân công.
+
+### Cấu hình và chạy trên Windows PowerShell
+
+Từ thư mục Backend hiện tại:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+# Chỉ SDK nếu các dependency khác đã cài:
+.\.venv\Scripts\python.exe -m pip install "google-genai==1.75.0"
+# Người dùng tự chỉnh .env, thêm GEMINI_KEY và GEMINI_MODEL theo .env.example.
+# Không dùng VITE_..., GOOGLE_API_KEY hoặc model mặc định.
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload
+```
+
+Terminal khác, từ thư mục gốc:
+
+```powershell
+Set-Location frontend
+npm.cmd install
+npm.cmd run dev
+# Kiểm tra build
+npm.cmd run build
+```
+
+Không có secret mới ở frontend. `core/database.py` vẫn đọc `.env` tại Backend root bằng load_dotenv; agent không sửa `.env` thật. GEMINI_KEY/GEMINI_MODEL thiếu chỉ khiến thao tác AI trả503; login, phiên/lịch sử và Helpdesk vẫn chạy. Không tự chọn model. Model do bạn cấu hình cần hỗ trợ Gemini Developer API và JSON Structured Outputs; cấu hình/model không phù hợp trả thông báo rõ, không đổi sang câu trả lời giả. Phiên bản đã kiểm tra: Python3.13, Pydantic2.14.1, google-genai1.75.0. SDK yêu cầu websockets<17; requirements đổi pin từ17.3 xuống16.1.1, `pip check` PASS. Không thêm WebSocket/chat mạng xã hội.
+
+Sau khi đăng nhập Khách hàng: mở widget → Phiên chat mới → hỏi bảo hành sofa → chọn Đồng ý lập bản nháp → bổ sung thông tin khi cần → Chỉnh sửa tiêu đề/mô tả/loại thật → Xác nhận → mở liên kết #HT-ID. Hủy chỉ hủy bản nháp, không tạo/xóa phiếu. Mỗi phiên tối đa một phiếu; để lập yêu cầu khác, tạo phiên mới. Khi mạng lỗi, tải lại lịch sử trước khi gửi/xác nhận lại. Tệp bổ sung qua chi tiết phiếu hiện có với kiểm tra quyền/MIME/dung lượng, không gửi tệp tới Gemini.
+
+### API và dữ liệu
+
+Prefix `/api/v1/customer/chatbot`, xem Swagger `/docs`:
+
+| Method/path | Chức năng | Bảng |
+| --- | --- | --- |
+| GET /sessions?page=1 | 20 phiên/trang, chỉ chủ sở hữu | phien_chat |
+| POST /sessions | Tạo phiên của khách hiện tại | phien_chat |
+| GET /sessions/{id}?before=... | 50 tin mới nhất; tải tiếp tin cũ | phien_chat, tin_nhan_chatbot |
+| POST /sessions/{id}/messages | Câu hỏi `{content}`; FAQ → Gemini → kiểm tra JSON → lưu cặp KHACH/BOT nguyên tử | cau_hoi_mau, tin_nhan_chatbot |
+| POST /sessions/{id}/draft | Đồng ý lập nháp/thu thập; không tạo phiếu | tin_nhan_chatbot |
+| POST /sessions/{id}/draft/cancel | Hủy nháp và ngừng thu thập | tin_nhan_chatbot |
+| POST /sessions/{id}/confirm | `{draft_message_id,title,description,type_id,confirmed:true}` | phien_chat + service phieu_ho_tro/history/SLA hiện có |
+
+Tất cả mutation dùng auth/role/Origin/CSRF hiện có; BIGINT ID trả dạng chuỗi. Khách khác phiên404; staff/manager403. Chatbot khác chat nhân viên: không đọc `tin_nhan` hoặc ghi chú nội bộ. Không có quyền SQL/tool/function cho Gemini. Bản nháp/lifecycle lưu JSON envelope có phiên bản trong nội dung BOT hiện hữu; API hiển thị trường rõ ràng, không lộ metadata fingerprint. Không thêm bảng/cột/enum hoặc migration.
+
+Xác nhận khóa dòng phien_chat NOWAIT, xác minh bản nháp mới nhất, gọi `create_ticket_in_transaction` được tách tối thiểu từ service cũ, ghi liên kết phieu_ma + dấu vân tay request + tin xác nhận trong **cùng transaction**. Request đồng thời409; retry cùng bản nháp/nội dung trả đúng phiếu đã tạo, khác nội dung409. Có hiệu lực qua restart/nhiều worker vì dựa vào dữ liệu/lock PostgreSQL, không cache RAM. Đây là idempotency theo **một phiên/một phiếu**, không phải chống trùng giữa các phiên khác nhau hoặc form tạo phiếu truyền thống. Phiên đã gửi chỉ đọc; không mất dấu xác nhận do gửi thêm tin.
+
+FAQ ban đầu truy xuất tối đa500 mục active, chuẩn hóa dấu/chữ, xếp overlap câu hỏi/từ khóa/câu trả lời; chỉ gửi tối đa4 mục liên quan, mỗi câu trả lời1800 ký tự, và8 tin gần nhất (1500 ký tự/tin). Không vector DB/embedding/migration. Các chính sách CHƯA CHỐT vẫn chưa xác nhận; không biến ví dụ thành cam kết. Không có tích hợp catalog/đơn hàng thật. Chỉ chia sẻ câu hỏi, ngữ cảnh rút gọn, FAQ và danh mục ID/tên loại; không gửi ID/email khách, JWT, CSRF, cookie, ghi chú hoặc dữ liệu khách khác. Lọc chuỗi secret rõ ràng và che email/chuỗi số liên hệ trước khi gửi; UI nhắc không cung cấp thông tin nhạy cảm và thông báo dữ liệu chuyển đến Google Gemini.
+
+Timeout20giây, một lần gọi SDK (không tự retry trả lời giả), output tối đa2200token; API giới hạn input2000ký tự. Tạo phiên5/phút và40/giờ/khách, gọi AI8/phút và60/giờ/khách, limiter per-process tối đa4096 khóa; gateway/shared limiter cần có khi triển khai nhiều worker. Gọi AI giữ transaction/dòng phiên tối đa timeout để đảm bảo thứ tự/lưu cặp nguyên tử; phiên đang xử lý trả409. Chưa có worker job/stream, policy lưu trữ/xóa hội thoại, read receipt hoặc gửi ảnh cho AI.
+
+### FAQ đã được duyệt và seed
+
+Đã đối chiếu metadata thực tế ba bảng, ban đầu FAQ=0. Theo phê duyệt người dùng ngày22/10/2026, đã chạy `scripts/seed_phase5_faq.py --apply --approved`: thêm30 FAQ, giữ nguyên mọi mục hiện có, transaction + table lock tránh trùng giữa các lần seed. Chạy preview lại cho0 mục. Không cần seed lại để dùng hệ thống. Các đầu tài liệu còn ghi bản nháp; xác nhận mới của người dùng duyệt bộ FAQ làm nguồn tri thức, **không** chốt POL01–POL08 hoặc các điều kiện thương mại còn thiếu.
+
+```powershell
+# Xem trước, không ghi CSDL
+.\.venv\Scripts\python.exe -X utf8 scripts/seed_phase5_faq.py
+# Chỉ khi có duyệt bổ sung rõ ràng
+.\.venv\Scripts\python.exe -X utf8 scripts/seed_phase5_faq.py --apply --approved
+```
+
+### Kiểm thử
+
+```powershell
+# Chỉ mock nhà cung cấp Gemini; API/SQL/hash/CSRF/giao diện dùng thật, fixture rollback
+.\.venv\Scripts\python.exe -X utf8 scripts/test_phase5.py --execute --browser
+# Race: hai kết nối độc lập; commit fixture riêng rồi dọn đúng ID
+.\.venv\Scripts\python.exe -X utf8 scripts/test_phase5_race.py --execute
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests -v
+```
+
+Không chạy hai harness browser cùng lúc (port8001/5174). Không có cuộc gọi Gemini thật trong automated tests. Kết quả/hạn chế, file thay đổi và kiểm thử chưa chạy: [PHASE5_TEST_RESULTS.md](docs/PHASE5_TEST_RESULTS.md). Nguồn tích hợp SDK: [Google Gen AI Python SDK](https://googleapis.github.io/python-genai/).
+
+### Khắc phục Gemini503 do schema
+
+Đã xác nhận và sửa lỗi Google400 `additional_properties` từ SDK1.75.0: chỉ bỏ keyword này khỏi schema gửi đi; Pydantic phía server vẫn `extra="forbid"`. Log lỗi Google được lọc, không đưa debug/key/prompt/PII về Frontend. Không đổi model/key hoặc `.env`.
+
+Bài thử live dùng đúng cấu hình chatbot (chỉ chạy chủ động, có thể dùng quota):
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/test_gemini_structured_live.py --execute
+```
+
+Unit mặc định vẫn `python -m unittest discover -s tests -v`, dùng mock, không gọi API thật. File unit đổi tên thành `tests/test_gemini_adapter.py` để tránh nhập nhầm script `test_gemini.py` ở thư mục gốc. Chi tiết, kết quả và cách thử lại UI: [GEMINI_503_DEBUG.md](docs/GEMINI_503_DEBUG.md).

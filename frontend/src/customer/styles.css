@@ -7,3 +7,15 @@
 @media(max-width:600px){.ticket-table{min-width:0}.ticket-table thead{display:none}.ticket-table tbody{display:grid;gap:16px}.ticket-table tr{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:10px;padding:12px;gap:14px}.ticket-table td{padding:0;border:0;min-width:0;overflow-wrap:anywhere;font-size:12px}.ticket-table td:first-child,.ticket-table td:last-child{grid-column:1/-1;max-width:none}.ticket-table td[data-label]:before{content:attr(data-label);display:block;color:var(--muted);font-size:10px;margin-bottom:8px}.ticket-title{font-size:14px}}
 
 .sidebar-footer{margin-top:auto;display:grid;gap:14px;width:100%;grid-column:1/-1}.sidebar-footer>.button{width:100%}.sidebar-footer .error-box{margin:0}
+
+/* Desktop sidebar stays within the viewport; only its menu region scrolls. */
+.sidebar-menu{display:contents}
+@media(min-width:801px){
+ .customer-dashboard>.sidebar{position:sticky;top:0;align-self:start;height:100vh;height:100dvh;min-height:0;overflow:hidden}
+ .customer-dashboard>.sidebar>.brand,.customer-dashboard>.sidebar>.identity,.customer-dashboard>.sidebar>.sidebar-footer{flex-shrink:0}
+ .sidebar-menu{display:flex;flex-direction:column;gap:28px;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
+ .sidebar-menu>.customer-nav,.sidebar-menu>.eyebrow,.sidebar-menu>.sidebar-banner,.sidebar-menu>p{flex-shrink:0}
+ .sidebar-menu .sidebar-banner{margin-bottom:0}
+ .sidebar-footer{flex-shrink:0;margin-top:0}
+}
+@media(max-width:800px){.sidebar-menu>.eyebrow{display:none}}
