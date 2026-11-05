@@ -1,5 +1,6 @@
 """Opt-in Phase4 integration smoke; isolated fixtures and real SQL, always rollback."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from pathlib import Path
 import os
@@ -55,9 +56,18 @@ def main():
             assert admin.post('/api/v1/manager/users',json=employee_body,headers=origin).status_code==403
             assert post(admin,'manager/users/'+employee_id,dict(name=employee['name'],phone=None,status='KHOA',expected_updated_at=employee['updated_at']),'PATCH').status_code==200
             assert employee_client.get('/api/v1/auth/me').status_code==401
+            rejected=employee_client.post('/api/v1/auth/login',json={'email':employee_body['email'],'password':password},headers=origin)
+            assert rejected.status_code==401
             locked=admin.get('/api/v1/manager/users/'+employee_id).json()
             assert post(admin,'manager/users/'+employee_id,dict(name=employee['name'],phone=None,status='HOAT_DONG',expected_updated_at=locked['updated_at']),'PATCH').status_code==200
             assert post(admin,'manager/users/'+employee_id,dict(name=employee['name'],phone=None,status='KHOA',expected_updated_at=employee['updated_at']),'PATCH').status_code==409
+            assert employee_client.get('/api/v1/auth/me').status_code==401
+            assert employee_client.get('/api/v1/auth/csrf').status_code==401
+            assert login(employee_client,employee_body['email'])['role']=='staff'
+            audit=(Path(tmp)/'manager.jsonl').read_text(encoding='utf8').splitlines()
+            actions=[entry['action'] for line in audit if (entry:=json.loads(line))['target']==employee_id]
+            assert 'account.lock' in actions and 'account.unlock' in actions
+            print('PASS lock/unlock: locked credentials and old cookies rejected, fresh login works, explicit audit events.')
             own=admin.get('/api/v1/manager/users/'+str(manager_id)).json()
             assert post(admin,'manager/users/'+str(manager_id),dict(name=own['name'],phone=None,status='KHOA',expected_updated_at=own['updated_at']),'PATCH').status_code==409
             fresh=admin.get('/api/v1/manager/users/'+employee_id).json()
@@ -67,6 +77,8 @@ def main():
             privileged=TestClient(app,raise_server_exceptions=False);assert login(privileged,f'role-{prefix}@example.com')['role']=='manager'
             assert privileged.get('/api/v1/manager/users').status_code==200
             assert post(admin,'manager/users/'+unused['id']+'/role',dict(role='NHAN_VIEN',current_password=password,confirmed=True,expected_updated_at=promoted.json()['updated_at'])).status_code==200
+            assert privileged.get('/api/v1/manager/users').status_code==401
+            assert login(privileged,f'role-{prefix}@example.com')['role']=='staff'
             assert privileged.get('/api/v1/manager/users').status_code==403
             assert post(admin,'manager/users/'+str(manager_id)+'/role',dict(role='NHAN_VIEN',current_password=password,confirmed=True,expected_updated_at=own['updated_at'])).status_code==409
             assert admin.get('/api/v1/manager/overview').status_code==200
@@ -84,6 +96,9 @@ def main():
             customer=TestClient(app,raise_server_exceptions=False);customer_body={**employee_body,'name':'Khách hàng fixture '+prefix,'email':f'customer-{prefix}@example.com'}
             assert customer.post('/api/v1/auth/register',json=customer_body,headers=origin).status_code==201
             customer_id=login(customer,customer_body['email'])['id']
+            priority=q('SELECT i FROM generate_series(30000,32767) i WHERE NOT EXISTS(SELECT 1 FROM {muc_do_uu_tien} WHERE mdut_ma=i OR thu_tu=i) LIMIT 1').fetchone()['i']
+            q('INSERT INTO {muc_do_uu_tien}(mdut_ma,ten,thu_tu) VALUES(%s,%s,%s)',(priority,'Fixture SLA '+prefix,priority))
+            os.environ['DEFAULT_PRIORITY_ORDER']=str(priority)
             r=post(customer,'customer/tickets',dict(title='Bảo hành sofa phase4',description='Chân sofa cần kiểm tra',type_id=type_id));assert r.status_code==201,r.text;ticket_id=r.json()['id']
             recommended=employee_client.get('/api/v1/staff/tickets?scope=recommended').json()
             item=next(t for t in recommended['items'] if t['id']==ticket_id);assert item['recommended'] and item['assigned_id'] is None
@@ -98,6 +113,79 @@ def main():
             temp_type=q('INSERT INTO {loai_ho_tro}(ten) VALUES(%s) RETURNING ht_ma',('Routing fixture '+prefix,)).fetchone()['ht_ma']
             assert post(admin,f'manager/routing/{temp_type}',dict(group_id=extra_group['id'],expected_group_id=None),'PATCH').status_code==200
             assert post(admin,f'manager/routing/{temp_type}',dict(group_id=group_id,expected_group_id=None),'PATCH').status_code==409
+            # Reproduce a legacy 3/2 group entirely with fixture records.
+            source_id=extra_group['id']
+            legacy_types=[]
+            for label in ('Legacy B','Legacy C','Pending'):
+                legacy_types.append(q('INSERT INTO {loai_ho_tro}(ten) VALUES(%s) RETURNING ht_ma',
+                                      (label+' '+prefix,)).fetchone()['ht_ma'])
+            for legacy in legacy_types[:2]:
+                q('INSERT INTO {xu_ly_mac_dinh}(ht_ma,nhom_ma) VALUES(%s,%s)',(legacy,source_id))
+            r=post(customer,'customer/tickets',dict(title='Phiếu fixture trước khi bỏ ánh xạ',description='Kiểm tra lịch sử phiếu cũ',type_id=temp_type))
+            assert r.status_code==201,r.text
+            old_id=r.json()['id']
+            assert post(employee_client,f'staff/tickets/{old_id}/accept').status_code==200
+            def old_ticket_snapshot():
+                ticket=q('SELECT * FROM {phieu_ho_tro} WHERE phieu_ma=%s',(old_id,)).fetchone()
+                assignment=q('SELECT * FROM {lich_su_phan_cong} WHERE phieu_ma=%s ORDER BY pc_ma',(old_id,)).fetchall()
+                history=q('SELECT * FROM {lich_su_trang_thai} WHERE phieu_ma=%s ORDER BY ls_ma',(old_id,)).fetchall()
+                return ticket,assignment,history
+            before=old_ticket_snapshot()
+            endpoint=f'manager/routing/{temp_type}?expected_group_id={source_id}'
+            assert len(admin.get(f'/api/v1/manager/groups/{source_id}').json()['types'])==3
+            preflight=admin.options('/api/v1/'+endpoint,headers={
+                **origin,'Access-Control-Request-Method':'DELETE','Access-Control-Request-Headers':'X-CSRF-Token',
+            })
+            assert preflight.status_code==200
+            assert admin.delete('/api/v1/'+endpoint,headers=origin).status_code==403
+            assert post(employee_client,endpoint,method='DELETE').status_code==403
+            assert post(admin,f'manager/routing/{temp_type}?expected_group_id={group_id}',method='DELETE').status_code==409
+            r=post(admin,endpoint,method='DELETE')
+            assert r.status_code==200,r.text
+            assert post(admin,endpoint,method='DELETE').status_code==409
+            assert len(admin.get(f'/api/v1/manager/groups/{source_id}').json()['types'])==2
+            assert old_ticket_snapshot()==before
+            assert q('SELECT count(*) n FROM {loai_ho_tro} WHERE ht_ma=%s',(temp_type,)).fetchone()['n']==1
+            assert post(admin,f'manager/routing/{legacy_types[2]}',dict(group_id=source_id,expected_group_id=None),'PATCH').status_code==409
+            assert post(admin,f'manager/routing/{legacy_types[0]}',dict(group_id=source_id,expected_group_id=source_id),'PATCH').status_code==200
+            r=post(customer,'customer/tickets',dict(title='Phiếu fixture chưa có ánh xạ',description='Kiểm tra lưu phiếu khi không có nhóm',type_id=temp_type))
+            assert r.status_code==201,r.text
+            pending_id=r.json()['id']
+            unassigned=admin.get('/api/v1/manager/tickets',params={'scope':'unrouted','search':pending_id}).json()['items']
+            assert len(unassigned)==1 and unassigned[0]['group_id'] is None and unassigned[0]['assigned_id'] is None
+            mapping=next(row for row in admin.get('/api/v1/manager/routing').json() if row['type_id']==str(temp_type))
+            assert mapping['group_id'] is None and mapping['waiting']>=1
+            params={'scope':'recommended','search':pending_id}
+            assert employee_client.get('/api/v1/staff/tickets',params=params).json()['items']==[]
+            r=post(admin,'manager/groups',dict(name='Đích fixture '+prefix,description=None,active=True))
+            assert r.status_code==201,r.text
+            target_id=r.json()['id']
+            assert post(admin,f'manager/routing/{legacy_types[0]}',dict(group_id=target_id,expected_group_id=source_id),'PATCH').status_code==200
+            assert post(admin,f'manager/routing/{temp_type}',dict(group_id=source_id,expected_group_id=None),'PATCH').status_code==200
+            suggested=employee_client.get('/api/v1/staff/tickets',params=params).json()['items']
+            assert len(suggested)==1 and suggested[0]['group_id']==source_id and suggested[0]['assigned_id'] is None
+            assert old_ticket_snapshot()==before
+            assert any(json.loads(line)['action']=='routing.remove' and json.loads(line)['target']==f'{temp_type}:{source_id}'
+                       for line in (Path(tmp)/'manager.jsonl').read_text(encoding='utf8').splitlines())
+            contender=q('INSERT INTO {loai_ho_tro}(ten) VALUES(%s) RETURNING ht_ma',
+                        ('Contender '+prefix,)).fetchone()['ht_ma']
+            with TestClient(app,raise_server_exceptions=False) as second_admin:
+                login(second_admin,f'manager-{prefix}@example.com')
+                start=threading.Barrier(2)
+                def compete(client, category):
+                    start.wait(timeout=5)
+                    return post(client,f'manager/routing/{category}',
+                                dict(group_id=target_id,expected_group_id=None),'PATCH').status_code
+                with ThreadPoolExecutor(max_workers=2) as workers:
+                    first=workers.submit(compete,admin,legacy_types[2])
+                    second_result=workers.submit(compete,second_admin,contender)
+                    assert sorted([first.result(),second_result.result()])==[200,409]
+            assert len(admin.get(f'/api/v1/manager/groups/{target_id}').json()['types'])==2
+            # A separate PostgreSQL transaction cannot take the coordination lock held by the mutation.
+            with get_connection() as competing, competing.cursor() as other:
+                other.execute('SELECT pg_try_advisory_xact_lock(%s)',(741032026,))
+                assert not other.fetchone()[0]
+            print('PASS routing: 3→2, rejects third, same-group no-op, move and reassign, stale/CSRF/role/audit, category and ticket history preserved, unassigned intake then suggestion, coordination lock across connections.')
             print('PASS B: existing warranty group preserved; staff multi-group membership; routing explicit save+stale409; customer warranty ticket recommended but unassigned until accept same ID; active tasks block removal/group disable/account lock.')
             if args.stage=='B':return
             r=post(admin,'manager/users',{**employee_body,'name':'Nhân viên thứ hai '+prefix,'email':f'employee2-{prefix}@example.com'});assert r.status_code==201,r.text;employee2=r.json()['id']
@@ -127,8 +215,6 @@ def main():
             print('PASS C: manager detail/filters; same-group and cross-group reassignment; stale409; outside-role/CSRF; assignment failure rollback; queue release MOI and staff accepts same ID; history preserved with one active assignment.')
             if args.stage=='C':return
             assert admin.get('/api/v1/manager/tickets/'+ticket_id).json()['sla_state']=='Chưa cấu hình SLA'
-            priority=q('SELECT i FROM generate_series(30000,32767) i WHERE NOT EXISTS(SELECT 1 FROM {muc_do_uu_tien} WHERE mdut_ma=i OR thu_tu=i) LIMIT 1').fetchone()['i']
-            q('INSERT INTO {muc_do_uu_tien}(mdut_ma,ten,thu_tu) VALUES(%s,%s,%s)',(priority,'Fixture SLA '+prefix,priority))
             policy_body=dict(name='SLA fixture '+prefix,priority_id=priority,response_minutes=30,resolution_minutes=120,active=True)
             r=post(admin,'manager/sla',policy_body);assert r.status_code==201,r.text;policy=r.json();policy_id=policy['id']
             assert post(admin,'manager/sla',policy_body).status_code==409
@@ -140,7 +226,6 @@ def main():
             apply=dict(expected_updated_at=old['updated_at'],recalculate=False,confirmed=True)
             assert post(admin,f'manager/tickets/{ticket_id}/sla',apply).status_code==200
             assert post(admin,f'manager/tickets/{ticket_id}/sla',apply).status_code==409
-            os.environ['DEFAULT_PRIORITY_ORDER']=str(priority)
             r=post(customer,'customer/tickets',dict(title='Phiếu SLA tự áp dụng',description='Fixture private priority',type_id=type_id));assert r.status_code==201,r.text;new_ticket_id=r.json()['id']
             applied=admin.get('/api/v1/manager/tickets/'+new_ticket_id).json();assert applied['sla_state']=='Sắp quá hạn' and applied['sla_name']==policy_body['name']
             deltas=q('SELECT EXTRACT(epoch FROM (han_phan_hoi-ngay_tao))/60 a,EXTRACT(epoch FROM (han_xu_ly-ngay_tao))/60 b FROM {phieu_ho_tro} WHERE phieu_ma=%s',(new_ticket_id,)).fetchone();assert deltas['a']==30 and deltas['b']==120
@@ -157,6 +242,15 @@ def main():
             assert q('SELECT EXTRACT(epoch FROM (han_xu_ly-ngay_tao))/60 n FROM {phieu_ho_tro} WHERE phieu_ma=%s',(ticket_id,)).fetchone()['n']==240
             assert post(employee_client,f'staff/tickets/{ticket_id}/messages',dict(content='Ghi chú quản lý không hiện cho khách',internal=True)).status_code==201
             assert employee_client.get('/api/v1/staff/tickets/'+ticket_id).json()['first_response_at'] is None
+            analytics_path='/api/v1/manager/reports/analytics'
+            analytics_params={'preset':'today','group':extra_group['id'],'type':type_id}
+            assert post(customer,f'customer/tickets/{ticket_id}/messages',dict(content='Khách bổ sung nội dung fixture')).status_code==201
+            response=admin.get(analytics_path,params=analytics_params)
+            assert response.status_code==200,response.text
+            assert response.json()['metrics']['response_samples']==0
+            assert employee_client.get(analytics_path).status_code==403
+            assert admin.get(analytics_path,params={'preset':'custom','start':'2026-01-03','end':'2026-01-01'}).status_code==422
+
             assert post(employee_client,f'staff/tickets/{ticket_id}/messages',dict(content='Đã kiểm tra chân sofa',internal=False)).status_code==201
             assert employee_client.get('/api/v1/staff/tickets/'+ticket_id).json()['first_response_at'] is not None
             assert 'Ghi chú quản lý không hiện cho khách' not in customer.get('/api/v1/customer/tickets/'+ticket_id).text
@@ -189,13 +283,15 @@ def main():
             role_body=dict(role='QUAN_TRI_VIEN',current_password=password,confirmed=True,expected_updated_at=used['updated_at'])
             assert post(admin,'manager/users/'+employee_id+'/role',role_body).status_code==409
             assert post(admin,'manager/users/'+employee_id+'/role',role_body).status_code==429
-            print('PASS privileged role confirmation: real grant/revoke applies to existing session; self-change and used accounts blocked; 5/min rate limit.')
+            print('PASS privileged role confirmation: real grant/revoke requires a fresh session; self-change and used accounts blocked; 5/min rate limit.')
             if args.browser:
                 fixtures={}
                 for project in ['desktop','mobile']:
                     browser_priority=q('SELECT i FROM generate_series(30000,32767) i WHERE NOT EXISTS(SELECT 1 FROM {muc_do_uu_tien} WHERE mdut_ma=i OR thu_tu=i) LIMIT 1').fetchone()['i']
                     q('INSERT INTO {muc_do_uu_tien}(mdut_ma,ten,thu_tu) VALUES(%s,%s,%s)',(browser_priority,'Browser '+project+' '+prefix[:8],browser_priority))
-                    fixtures[project]=dict(manager_email=f'manager-{prefix}@example.com',prefix=prefix,type_id=str(temp_type),priority_id=str(browser_priority),type_name='Routing fixture '+prefix)
+                    browser_type_name='Loại trình duyệt '+project+' '+prefix
+                    browser_type=q('INSERT INTO {loai_ho_tro}(ten) VALUES(%s) RETURNING ht_ma',(browser_type_name,)).fetchone()['ht_ma']
+                    fixtures[project]=dict(manager_email=f'manager-{prefix}@example.com',prefix=prefix,type_id=str(browser_type),priority_id=str(browser_priority),type_name=browser_type_name)
                 run_browser(fixtures,password)
 
 

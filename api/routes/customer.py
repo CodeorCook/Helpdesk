@@ -2,11 +2,11 @@ from schemas.conversation import Conversation
 from services import conversation_service
 from fastapi import HTTPException
 from datetime import date
-from fastapi import APIRouter, Depends, File, Header, Path, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Header, Path, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
-from api.routes.auth import require_role, session_claims
-from core.security import check_csrf
+from api.routes.auth import require_role, session_claims, set_session
+from core.security import check_csrf, refresh_account_session
 from schemas.auth import UserResponse
 from schemas.customer import (AttachmentResponse, CatalogItem, CloseRequest, MessageCreate, MessageResponse, Overview,
                               ProfileResponse, ProfileUpdate, RatingCreate, RatingResponse, TicketCreate, TicketDetail, TicketPage, TicketResponse)
@@ -99,8 +99,12 @@ def profile(user: UserResponse = Depends(customer)):
 
 
 @router.patch("/profile", response_model=ProfileResponse, dependencies=[Depends(mutation_guard)])
-def update_profile(body: ProfileUpdate, user: UserResponse = Depends(customer)):
-    return service.update_profile(user.id,body)
+def update_profile(body: ProfileUpdate, response: Response, user: UserResponse = Depends(customer),
+                   claims: dict = Depends(session_claims)):
+    profile = service.update_profile(user.id, body, claims["account_version"])
+    # Keep the initiating session after a self-service profile edit, with its original expiry.
+    set_session(response, refresh_account_session(claims, profile.pop("ngay_cap_nhat")))
+    return profile
 
 
 @router.get('/tickets/{ticket_id}/conversation',response_model=Conversation)

@@ -1,10 +1,147 @@
-import { useEffect,useState,type FormEvent } from 'react';
-import { Link,useParams } from 'react-router-dom';
-import { Button,Input } from '../components';
-import { managerApi,type Page,type Account } from './api';
-export type Group={id:string;name:string;description:string|null;active:boolean;members:number;pending:number};
-type Detail=Group&{people:{id:string;name:string;status:string;workload:number}[];types:{id:string;name:string}[]};
-export async function allGroups(){const result:Group[]=[];for(let page=1;;page++){const d=await managerApi<Page<Group>>(`/groups?page=${page}&page_size=100`);result.push(...d.items);if(result.length>=d.total||!d.items.length)return result}}
-export function ManagerGroups(){const [data,setData]=useState<Page<Group>>();const [page,setPage]=useState(1);const [error,setError]=useState('');const [busy,setBusy]=useState(false);async function load(){try{setData(await managerApi<Page<Group>>(`/groups?page=${page}`))}catch(e){setError((e as Error).message)}}useEffect(()=>{void load()},[page]);async function create(e:FormEvent<HTMLFormElement>){e.preventDefault();const form=e.currentTarget;const fd=new FormData(form);setBusy(true);setError('');try{await managerApi('/groups',{method:'POST',body:JSON.stringify({name:fd.get('name'),description:fd.get('description')||null,active:true})});form.reset();await load()}catch(e){setError((e as Error).message)}finally{setBusy(false)}}return <><h1>Nhóm hỗ trợ</h1><p>Một nhân viên có thể thuộc nhiều nhóm. Các nhóm và ánh xạ nội thất hiện có được giữ nguyên cho tới khi bạn chủ động lưu thay đổi.</p>{error&&<p role="alert" className="error-box">{error}</p>}{data?<><div className="panel table-scroll"><table className="ticket-table"><thead><tr><th>Nhóm</th><th>Thành viên</th><th>Phiếu đang giao</th><th>Hoạt động</th></tr></thead><tbody>{data.items.map(g=><tr key={g.id}><td data-label="Nhóm"><Link className="text-link" to={`/manager/groups/${g.id}`}>{g.name}</Link><small>{g.description}</small></td><td data-label="Thành viên">{g.members}</td><td data-label="Phiếu đang giao">{g.pending}</td><td data-label="Hoạt động">{g.active?'Đang hoạt động':'Đã vô hiệu hóa'}</td></tr>)}</tbody></table>{!data.total&&<p>Chưa có nhóm.</p>}</div><div className="pagination"><Button disabled={page===1} onClick={()=>setPage(page-1)}>Trước</Button><span>Trang {page} · {data.total} nhóm</span><Button disabled={page*data.page_size>=data.total} onClick={()=>setPage(page+1)}>Sau</Button></div></>:!error&&<p role="status">Đang tải nhóm…</p>}<form className="panel customer-form" onSubmit={create}><h2>Tạo nhóm chuyên môn</h2><Input id="group-create-name" name="name" label="Tên nhóm" maxLength={100} required/><label className="field">Mô tả nhóm<textarea name="description" rows={3} maxLength={5000}/></label><Button disabled={busy}>{busy?'Đang tạo…':'Tạo nhóm'}</Button></form></>}
+import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Pencil } from 'lucide-react';
+import { Button, Input } from '../components';
+import { ManagerDialog, ManagerStatus } from './Dialog';
+import { ManagerPagination, lastPage } from './Pagination';
+import { GroupDialog } from './GroupDialog';
+import { managerApi, type Page } from './api';
+import type { TicketCounts } from './metrics';
 
-export function ManagerGroup(){const {id}=useParams();const [data,setData]=useState<Detail>();const [search,setSearch]=useState('');const [people,setPeople]=useState<Account[]>([]);const [error,setError]=useState('');const [notice,setNotice]=useState('');const [busy,setBusy]=useState(false);async function load(){try{setData(await managerApi<Detail>(`/groups/${id}`))}catch(e){setError((e as Error).message)}}useEffect(()=>{void load()},[id]);async function mutate(path:string,body:unknown,method='POST'){setBusy(true);setError('');try{await managerApi(`/groups/${id}${path}`,{method,body:JSON.stringify(body)});setNotice('Đã cập nhật nhóm.');await load()}catch(e){setError((e as Error).message);await load()}finally{setBusy(false)}}async function find(){try{const d=await managerApi<Page<Account>>(`/users?role=NHAN_VIEN&status=HOAT_DONG&page_size=20&search=${encodeURIComponent(search)}`);setPeople(d.items)}catch(e){setError((e as Error).message)}}return <><Link to="/manager/groups" className="text-link">← Nhóm hỗ trợ</Link><h1>{data?.name||'Chi tiết nhóm'}</h1>{error&&<p role="alert" className="error-box">{error}</p>}{notice&&<p role="status" className="success-box">{notice}</p>}{data&&<><form key={JSON.stringify([data.name,data.description,data.active])} className="panel customer-form" onSubmit={e=>{e.preventDefault();const fd=new FormData(e.currentTarget);if(window.confirm('Lưu nhóm? Vô hiệu hóa nhóm khiến hàng đợi của nhóm chờ điều phối.'))void mutate('',{name:fd.get('name'),description:fd.get('description')||null,active:fd.get('active')==='on',expected:{name:data.name,description:data.description,active:data.active}},'PATCH')}}><h2>Thông tin nhóm</h2><Input id="group-name" label="Tên nhóm" name="name" defaultValue={data.name} maxLength={100} required/><label className="field">Mô tả nhóm<textarea name="description" defaultValue={data.description||''} rows={3} maxLength={5000}/></label><label><input type="checkbox" name="active" defaultChecked={data.active}/> Nhóm đang hoạt động</label><p>{data.pending} phiếu được giao chưa kết thúc. Phải điều phối xong trước khi vô hiệu hóa nhóm/bỏ thành viên. Phiếu đã giải quyết còn chờ khách đóng cũng được bảo vệ.</p><Button disabled={busy}>Lưu nhóm</Button></form><section className="panel"><h2>Chuyên môn / loại yêu cầu</h2>{data.types.length?data.types.map(t=><p key={t.id}>{t.name}</p>):<p>Chưa có loại hỗ trợ được ánh xạ.</p>}<Link className="text-link" to="/manager/routing">Điều chỉnh ánh xạ</Link></section><section className="panel"><h2>Thành viên nhóm</h2>{data.people.length?data.people.map(p=><div className="attachment-row" key={p.id}><span>{p.name} · #{p.id}<small>{p.status==='HOAT_DONG'?'Hoạt động':'Đã khóa'} · {p.workload} phiếu đang xử lý</small></span><Button className="secondary" disabled={busy} onClick={()=>{if(window.confirm('Bỏ nhân viên khỏi nhóm này?'))void mutate('/members/remove',{employee_id:p.id})}}>Bỏ thành viên</Button></div>):<p>Chưa có thành viên.</p>}</section><section className="panel"><h2>Thêm nhân viên hoạt động</h2><Input id="group-employee-search" label="Tìm nhân viên theo tên, email hoặc ID" value={search} onChange={e=>setSearch(e.target.value)} maxLength={150}/><Button type="button" className="secondary" onClick={()=>void find()}>Tìm nhân viên</Button><p>Hiển thị tối đa 20 kết quả. Tạo tài khoản nhân viên ở mục Tài khoản và quyền nếu chưa có.</p><form className="customer-form" onSubmit={e=>{e.preventDefault();const fd=new FormData(e.currentTarget);void mutate('/members',{employee_id:fd.get('employee_id')})}}><label className="field">Nhân viên<select name="employee_id" required defaultValue=""><option value="" disabled>Chọn nhân viên</option>{people.map(p=><option key={p.id} value={p.id}>{p.name} · #{p.id}</option>)}</select></label><Button disabled={busy||!data.active}>Thêm vào nhóm</Button></form></section></>}</>}
+export type Group = { id: string; name: string; description: string | null; active: boolean; members: number; pending: number };
+export type GroupDetail = Group & {
+  people: { id: string; name: string; status: string; workload: number }[];
+  types: { id: string; name: string }[];
+  stats: TicketCounts;
+};
+
+export async function allGroups() {
+  const result: Group[] = [];
+  for (let page = 1; ; page++) {
+    const data = await managerApi<Page<Group>>(`/groups?page=${page}&page_size=100`);
+    result.push(...data.items);
+    if (result.length >= data.total || !data.items.length) return result;
+  }
+}
+
+function CreateGroup({ close, created }: { close: () => void; created: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    const fields = new FormData(event.currentTarget);
+    const name = String(fields.get('name')).trim();
+    if (!name) {
+      setError('Vui lòng nhập tên nhóm.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await managerApi('/groups', {
+        method: 'POST',
+        body: JSON.stringify({ name, description: fields.get('description') || null, active: true }),
+      });
+      created();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <ManagerDialog title="Tạo nhóm hỗ trợ" onClose={close} busy={busy}>
+    <form className="manager-form" onSubmit={submit}>
+      <Input id="group-create-name" name="name" label="Tên nhóm" maxLength={100} required/>
+      <label className="field">Mô tả nhóm<textarea name="description" rows={3} maxLength={5000}/></label>
+      {error && <p role="alert" className="error-box">{error}</p>}
+      <div className="actions manager-dialog-actions">
+        <Button type="button" className="secondary" onClick={close} disabled={busy}>Hủy</Button>
+        <Button disabled={busy}>{busy ? 'Đang tạo…' : 'Tạo nhóm'}</Button>
+      </div>
+    </form>
+  </ManagerDialog>;
+}
+
+export function ManagerGroups() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [editing, setEditing] = useState<string>();
+  const [creating, setCreating] = useState(false);
+  const [data, setData] = useState<Page<Group>>();
+  const [page, setPage] = useState(1);
+  const [revision, setRevision] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const selected = id ?? editing;
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError('');
+    managerApi<Page<Group>>(`/groups?page=${page}`).then(result => {
+      if (!active) return;
+      if (result.page > lastPage(result)) {
+        setPage(lastPage(result));
+        return;
+      }
+      setData(result);
+      setLoading(false);
+    }).catch(e => {
+      if (active) {
+        setError(e.message);
+        setLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [page, revision]);
+
+  function closeGroup() {
+    if (id) navigate('/manager/groups', { replace: true });
+    else setEditing(undefined);
+  }
+
+  return <>
+    <div className="page-heading">
+      <div><h1>Nhóm hỗ trợ</h1><p>Quản lý nhóm chuyên môn, thành viên và khối lượng phiếu.</p></div>
+      <Button onClick={() => setCreating(true)}>Tạo nhóm hỗ trợ</Button>
+    </div>
+    {error && <p role="alert" className="error-box">{error}</p>}
+    {notice && <p role="status" className="success-box">{notice}</p>}
+    {data ? <section className="panel manager-list-panel" aria-label="Danh sách nhóm hỗ trợ">
+      <div className="table-scroll manager-groups-table">
+        <table className="ticket-table">
+          <thead><tr>{['Nhóm', 'Thành viên', 'Phiếu đang giao', 'Trạng thái', 'Thao tác'].map(label => <th key={label}>{label}</th>)}</tr></thead>
+          <tbody>{data.items.map(group => <tr key={group.id}>
+            <td data-label="Nhóm"><strong>{group.name}</strong><small>{group.description}</small></td>
+            <td data-label="Thành viên">{group.members}</td>
+            <td data-label="Phiếu đang giao">{group.pending}</td>
+            <td data-label="Trạng thái"><ManagerStatus active={group.active} inactiveLabel="Đã vô hiệu hóa"/></td>
+            <td data-label="Thao tác"><Button type="button" className="secondary manager-icon-button"
+              aria-label={`Chỉnh sửa nhóm ${group.name}`} title="Chỉnh sửa nhóm" onClick={() => setEditing(group.id)}>
+              <Pencil size={17} aria-hidden="true"/>
+            </Button></td>
+          </tr>)}</tbody>
+        </table>
+        {!data.total && <p>Chưa có nhóm.</p>}
+      </div>
+      <ManagerPagination data={data} label="nhóm" busy={loading} move={next => {
+        setLoading(true);
+        if (next === page) setRevision(value => value + 1);
+        else setPage(next);
+      }}/>
+    </section> : !error && <p role="status">Đang tải nhóm…</p>}
+    {creating && <CreateGroup close={() => setCreating(false)} created={() => {
+      setCreating(false);
+      setNotice('Đã tạo nhóm hỗ trợ.');
+      setRevision(value => value + 1);
+    }}/>}
+    {selected && <GroupDialog key={selected} id={selected} close={closeGroup}
+      changed={() => setRevision(value => value + 1)}/>}
+  </>;
+}
+
+export const ManagerGroup = ManagerGroups;

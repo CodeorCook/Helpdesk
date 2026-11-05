@@ -4,7 +4,7 @@ from psycopg.rows import dict_row
 from psycopg.errors import UniqueViolation
 
 from core.database import ConfigurationError, database_schema, get_connection
-from core.security import PASSWORD_HASHER, burn_password_check, verify_password
+from core.security import PASSWORD_HASHER, account_session_version, burn_password_check, verify_password
 from schemas.auth import RegisterRequest, UserResponse
 
 
@@ -39,7 +39,7 @@ def account_table(conn):
         cur.execute("""SELECT column_name FROM information_schema.columns
                        WHERE table_schema = %s AND table_name = %s""", (schema, "nguoi_dung"))
         columns = {r[0] for r in cur.fetchall()}
-    required = {"nd_ma", "ho_ten", "email", "mat_khau_hash", "vai_tro", "trang_thai"}
+    required = {"nd_ma", "ho_ten", "email", "mat_khau_hash", "vai_tro", "trang_thai", "ngay_cap_nhat"}
     if not required.issubset(columns):
         raise ConfigurationError("Chưa có bảng xác thực phù hợp trong DB_SCHEMA. Cần khởi tạo CSDL theo SQL đã được duyệt.")
     return sql.Identifier(schema, "nguoi_dung")
@@ -50,7 +50,7 @@ def find_account(*, email: str | None = None, user_id: str | None = None):
         table = account_table(conn)
         condition = sql.SQL("lower(email) = lower(%s)") if email is not None else sql.SQL("nd_ma = %s")
         with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(sql.SQL("SELECT nd_ma, ho_ten, email, mat_khau_hash, vai_tro, trang_thai FROM {} WHERE {}").format(
+            cur.execute(sql.SQL("SELECT nd_ma, ho_ten, email, mat_khau_hash, vai_tro, trang_thai, ngay_cap_nhat FROM {} WHERE {}").format(
                 table, condition), (email.strip() if email is not None else user_id,))
             rows = cur.fetchmany(2)
             if len(rows) > 1:
@@ -65,7 +65,7 @@ def public_user(account: dict) -> UserResponse:
     return UserResponse(id=str(account["nd_ma"]), name=account["ho_ten"], email=account["email"], role=role[0], role_label=role[1])
 
 
-def login(email: str, password: str) -> UserResponse:
+def login(email: str, password: str) -> tuple[UserResponse, str]:
     account = find_account(email=email)
     if account is None:
         burn_password_check(password)
@@ -73,13 +73,15 @@ def login(email: str, password: str) -> UserResponse:
     valid = verify_password(password, account["mat_khau_hash"])
     if not valid or account["trang_thai"] != "HOAT_DONG":
         raise HTTPException(401, "Email hoặc mật khẩu không chính xác, hoặc tài khoản không hoạt động.")
-    return public_user(account)
+    return public_user(account), account_session_version(account["ngay_cap_nhat"])
 
 
-def current_user(user_id: str) -> UserResponse:
+def current_user(user_id: str, account_version: str) -> UserResponse:
     if not user_id.isascii() or not user_id.isdecimal() or len(user_id) > 19 or int(user_id) > 9223372036854775807:
         raise HTTPException(401, "Phiên không hợp lệ.")
     account = find_account(user_id=user_id)
     if account is None or account["trang_thai"] != "HOAT_DONG":
         raise HTTPException(401, "Tài khoản không tồn tại hoặc không hoạt động.")
+    if account_session_version(account["ngay_cap_nhat"]) != account_version:
+        raise HTTPException(401, "Phiên đã hết hiệu lực. Vui lòng đăng nhập lại.")
     return public_user(account)

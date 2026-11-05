@@ -58,7 +58,7 @@ def session_claims(request: Request):
 
 
 def authenticated_user(claims: dict = Depends(session_claims)) -> UserResponse:
-    return auth_service.current_user(claims["sub"])
+    return auth_service.current_user(claims["sub"], claims["account_version"])
 
 
 def require_role(role: str):
@@ -78,8 +78,8 @@ def login(body: LoginRequest, request: Request, response: Response):
     check_origin(request)
     limit_login(request)
     signing_key()
-    user = auth_service.login(body.email, body.password)
-    token, csrf = issue_session(user.id)
+    user, account_version = auth_service.login(body.email, body.password)
+    token, csrf = issue_session(user.id, account_version)
     set_session(response, token)
     return SessionResponse(user=user, csrf_token=csrf)
 
@@ -90,7 +90,7 @@ def me(user: UserResponse = Depends(authenticated_user)):
 
 
 @router.get("/auth/csrf")
-def csrf(request: Request, response: Response, claims: dict = Depends(session_claims)):
+def csrf(claims: dict = Depends(session_claims), user: UserResponse = Depends(authenticated_user)):
     # Chỉ đọc, không đổi phiên; SOP/CORS ngăn website khác đọc token.
     return {"csrf_token": csrf_for(claims["jti"])}
 

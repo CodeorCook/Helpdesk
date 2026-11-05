@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from schemas.auth import RegisterRequest
@@ -89,7 +89,18 @@ class SimpleItem(BaseModel):
     name: str
 
 
+class TicketCounts(BaseModel):
+    total: int
+    waiting: int
+    processing: int
+    paused: int
+    resolved: int
+    closed: int
+    overdue: int
+
+
 class GroupDetail(Group):
+    stats: TicketCounts
     people: list[Member]
     types: list[SimpleItem]
 
@@ -101,6 +112,7 @@ class Message(BaseModel):
 class Routing(BaseModel):
     type_id: str
     type_name: str
+    type_active: bool
     group_id: str | None
     group_name: str | None
     group_active: bool | None
@@ -181,20 +193,18 @@ class NamedCount(BaseModel):
     count: int
 
 
-class ManagerOverview(BaseModel):
-    total: int
-    waiting: int
-    processing: int
-    paused: int
-    resolved: int
-    closed: int
-    overdue: int
+class ManagerOverview(TicketCounts):
     users: int
     groups: int
     by_status: list[NamedCount]
     by_group: list[NamedCount]
     by_type: list[NamedCount]
     by_priority: list[NamedCount]
+
+
+class DashboardOverview(ManagerOverview):
+    by_week: list[NamedCount]
+    by_month: list[NamedCount]
 
 
 class Performance(BaseModel):
@@ -234,3 +244,59 @@ class ActivityPage(BaseModel):
     total: int
     page: int
     page_size: int
+
+class AnalyticsMetrics(BaseModel):
+    created: int
+    resolved: int
+    response_samples: int
+    response_avg: float | None
+    resolution_avg: float | None
+    response_on_time: int
+    response_late: int
+    resolution_on_time: int
+    resolution_late: int
+    resolution_quarter: int
+    resolution_half: int
+    resolution_full: int
+    response_missing: int
+    resolution_missing: int
+    response_open_late: int
+    response_open_on_time: int
+    resolution_open_late: int
+    resolution_open_on_time: int
+    intake_missing_sla: int
+    missing_resolution_time: int
+    closed_in_period: int
+    closed_with_rating: int
+    ratings: int
+    rating_avg: float | None
+    positive: int
+
+
+class AnalyticsGroup(AnalyticsMetrics):
+    group_id: str
+    group_name: str
+
+
+class AnalyticsPoint(BaseModel):
+    grain: Literal['day', 'week', 'month']
+    date: date
+    created: int
+    resolved: int
+
+
+class RatingBucket(BaseModel):
+    stars: int
+    count: int
+
+
+class ReportAnalytics(BaseModel):
+    start: date
+    end: date
+    snapshot_at: datetime
+    group_id: str | None
+    type_id: str | None
+    metrics: AnalyticsMetrics
+    groups: list[AnalyticsGroup]
+    rating_distribution: list[RatingBucket]
+    trend: list[AnalyticsPoint]

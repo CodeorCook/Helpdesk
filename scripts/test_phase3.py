@@ -149,8 +149,11 @@ def main():
             q('DELETE FROM {nhan_vien} WHERE nd_ma=%s',(ids[4],))
             assert clients[4].get('/api/v1/staff/overview').status_code==409
             q('INSERT INTO {nhan_vien}(nd_ma) VALUES(%s)',(ids[4],))
+            token=clients[2].get('/api/v1/auth/csrf').json()['csrf_token']
             q("UPDATE {nguoi_dung} SET trang_thai='KHOA' WHERE nd_ma=%s",(ids[2],))
-            assert post(clients[2],f'staff/tickets/{created}/accept').status_code in (401,403)
+            assert clients[2].get('/api/v1/auth/csrf').status_code==401
+            assert clients[2].post(f'/api/v1/staff/tickets/{created}/accept',
+                                   headers={**origin,'X-CSRF-Token':token}).status_code==401
             print('PASS E: stored SLA only; missing/within/soon/overdue; own dashboard count; ID/type/status/priority filters; invalid dates; locked user blocked.')
             if args.browser:
                 q("UPDATE {nguoi_dung} SET trang_thai='HOAT_DONG' WHERE nd_ma=%s",(ids[2],))

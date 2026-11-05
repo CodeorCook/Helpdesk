@@ -25,7 +25,7 @@ app.include_router(manager_router)
 app.include_router(chatbot_router)
 app.add_middleware(BodyLimitMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=allowed_origins(), allow_credentials=True,
-                   allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type", "X-CSRF-Token"])
+                   allow_methods=["GET", "POST", "PATCH", "DELETE"], allow_headers=["Content-Type", "X-CSRF-Token"])
 
 
 @app.middleware("http")

@@ -252,7 +252,7 @@ Lệnh khởi động Windows giữ nguyên ở đầu README. Để thử: `/re
 
 ## Giai đoạn 4 — Quản lý
 
-Đã có `/manager` tổng quan PostgreSQL thật; `/manager/users` và `/:id` tạo Nhân viên, sửa thông tin/khóa/mở và phân quyền có xác nhận; `/manager/groups` và `/:id` quản lý nhóm/thành viên; `/manager/routing` điều chỉnh ánh xạ; `/manager/tickets` và `/:id` giám sát/điều phối cùng hoặc khác nhóm; `/manager/sla` chính sách; `/manager/reports` thống kê/hoạt động phân trang. API prefix `/api/v1/manager`; [bảng Use Case → API → CSDL, file thay đổi và kiểm thử](docs/PHASE4_TEST_RESULTS.md).
+Đã có `/manager` tổng quan PostgreSQL thật; `/manager/users` và `/:id` tạo Nhân viên, sửa thông tin/khóa/mở và phân quyền có xác nhận; `/manager/groups` và `/:id` quản lý nhóm/thành viên và ánh xạ loại yêu cầu; đường dẫn cũ `/manager/routing` chuyển về danh sách nhóm; `/manager/tickets` và `/:id` giám sát/điều phối cùng hoặc khác nhóm; `/manager/sla` chính sách; `/manager/reports` thống kê/hoạt động phân trang. API prefix `/api/v1/manager`; [bảng Use Case → API → CSDL, file thay đổi và kiểm thử](docs/PHASE4_TEST_RESULTS.md).
 
 Không xóa cứng tài khoản, không tự khóa/hạ quyền, không làm mất Quản lý cuối cùng. Chỉ đổi role khi tài khoản chưa có nghiệp vụ/nhóm; yêu cầu mật khẩu actor và xác nhận, giới hạn 5 lần/phút/process. Không thêm actor hoặc đổi mã QUAN_TRI_VIEN. Tạo nhân viên luôn gán NHAN_VIEN và tạo hồ sơ cùng transaction. Hệ thống không gửi email hoặc bắt đổi mật khẩu lần đầu; bàn giao mật khẩu ban đầu qua kênh riêng được tổ chức chấp thuận. Email/mật khẩu không chỉnh qua form thông tin tài khoản.
 

@@ -20,13 +20,13 @@ export function Brand({dashboard=false}:{dashboard?:boolean}={}) {
 }
 export function Header({simple=false}: {simple?:boolean}) {
   const {user}=useAuth(); const [open,setOpen]=useState(false);
-  return <header className="header"><PageContainer className="header-inner"><Brand/>{simple ? <Link className="text-link" to="/"><ArrowLeft size={17}/> Về trang chủ</Link> : <>
+  return <header className="header"><PageContainer className="header-inner"><Brand/>{simple ? null  : <>
     <button className="menu-toggle" onClick={()=>setOpen(!open)} aria-expanded={open} aria-label={open?'Đóng điều hướng':'Mở điều hướng'}>{open?<X/>:<Menu/>}</button>
     <nav className={open?'navigation open':'navigation'} aria-label="Điều hướng chính"><Link onClick={()=>setOpen(false)} to="/">Trang chủ</Link>{[['Tính năng','features'],['Quy trình','process'],['Câu hỏi thường gặp','faq']].map(([label,id])=><a onClick={()=>setOpen(false)} key={id} href={`/#${id}`}>{label}</a>)}</nav>
     <Link className="button secondary header-action" to={user?`/${user.role}`:'/login'}>{user?'Không gian của bạn':'Đăng nhập'}<ArrowUpRight size={17}/></Link></>}<ThemeSwitcher/></PageContainer></header>;
 }
 export function Footer() {
-  return <footer><PageContainer><div className="footer-grid"><div><Brand/><p>Một nơi để tiếp nhận, xử lý và theo dõi yêu cầu hỗ trợ khách hàng.</p><small>Dự án học tập · Giai đoạn 1</small></div><div><strong>Khám phá</strong><a href="/#features">Tính năng</a><a href="/#process">Quy trình hỗ trợ</a><a href="/#faq">Câu hỏi thường gặp</a></div><div><strong>Hỗ trợ</strong><Link to="/support/new">Gửi yêu cầu hỗ trợ</Link><Link to="/support/lookup">Tra cứu phiếu</Link><Link to="/login">Đăng nhập</Link></div></div><div className="footer-bottom">© 2026 Hệ thống quản lý hỗ trợ khách hàng <span>Trải nghiệm hỗ trợ rõ ràng.</span></div></PageContainer></footer>;
+  return <footer><PageContainer><div className="footer-grid"><div><Brand/><p>Một nơi để tiếp nhận, xử lý và theo dõi yêu cầu hỗ trợ khách hàng.</p></div><div><strong>Khám phá</strong><a href="/#features">Tính năng</a><a href="/#process">Quy trình hỗ trợ</a><a href="/#faq">Câu hỏi thường gặp</a></div><div><strong>Hỗ trợ</strong><Link to="/support/new">Gửi yêu cầu hỗ trợ</Link><Link to="/support/lookup">Tra cứu phiếu</Link><Link to="/login">Đăng nhập</Link></div></div><div className="footer-bottom">© 2026 Hệ thống quản lý hỗ trợ khách hàng <span>Trải nghiệm hỗ trợ rõ ràng.</span></div></PageContainer></footer>;
 }
 export function StatusPage({title,children}: {title:string;children:ReactNode}) {
   return <><Header simple/><main className="status-page container"><span className="eyebrow">CỔNG HỖ TRỢ KHÁCH HÀNG</span><h1>{title}</h1>{children}<Link className="button" to="/">Về trang chủ <ArrowUpRight size={17}/></Link></main></>;

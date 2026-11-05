@@ -1,6 +1,7 @@
 """Manager role boundary; no public privileged registration or destructive account API."""
 from contextlib import contextmanager
 from datetime import datetime,time,timedelta,timezone
+from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 from psycopg import sql
 from psycopg.rows import dict_row
@@ -32,6 +33,8 @@ def manager_cursor(user_id,mutation=False):
             if cur.fetchone() is None:raise HTTPException(403,'Cần hồ sơ Quản lý đang hoạt động.')
             yield cur,events
     except UniqueViolation as exc:
+        if exc.diag.constraint_name == 'uq_sla_muc_uu_tien_dang_dung':
+            raise HTTPException(409, 'Mức ưu tiên này đã có chính sách SLA có hiệu lực. Hãy tắt chính sách hiện tại trước khi bật chính sách khác.') from exc
         raise HTTPException(409,'Dữ liệu trùng hoặc cấu hình đang có hiệu lực đã tồn tại. Hãy làm mới để kiểm tra.') from exc
     for action,target in events:record(user_id,action,target)
 
@@ -97,8 +100,12 @@ def update_account(actor,user_id,body):
             if row['role']=='QUAN_TRI_VIEN':
                 execute(cur,"SELECT count(*) n FROM {nguoi_dung} n JOIN {quan_tri_vien} q USING(nd_ma) WHERE vai_tro='QUAN_TRI_VIEN' AND trang_thai='HOAT_DONG' AND nd_ma<>%s",(user_id,))
                 if cur.fetchone()['n']==0:raise HTTPException(409,'Phải giữ ít nhất một Quản lý hoạt động có hồ sơ hợp lệ.')
-        execute(cur,'UPDATE {nguoi_dung} SET ho_ten=%s,so_dien_thoai=%s,trang_thai=%s,ngay_cap_nhat=clock_timestamp() WHERE nd_ma=%s',(body.name,body.phone,body.status,user_id))
-        events.append(('account.update',user_id));return account_row(cur,user_id)
+        execute(cur,"UPDATE {nguoi_dung} SET ho_ten=%s,so_dien_thoai=%s,trang_thai=%s,ngay_cap_nhat=GREATEST(clock_timestamp(), ngay_cap_nhat + interval '1 microsecond') WHERE nd_ma=%s",(body.name,body.phone,body.status,user_id))
+        action = 'account.update'
+        if row['status'] != body.status:
+            action = 'account.lock' if body.status == 'KHOA' else 'account.unlock'
+        events.append((action, user_id))
+        return account_row(cur,user_id)
 
 
 def change_role(actor,user_id,body):
@@ -126,13 +133,45 @@ def change_role(actor,user_id,body):
         events.append(('account.role.'+body.role,user_id));return account_row(cur,user_id)
 
 
-def overview(actor,**options):
+def ticket_counts(cur, where, params):
+    execute(cur, '''
+        SELECT count(*) total,
+               count(*) FILTER (WHERE t.ma='MOI') waiting,
+               count(*) FILTER (WHERE t.ma='DANG_XU_LY') processing,
+               count(*) FILTER (WHERE t.ma='TAM_DUNG') paused,
+               count(*) FILTER (WHERE t.ma='DA_GIAI_QUYET') resolved,
+               count(*) FILTER (WHERE t.ma='DA_DONG') closed,
+               count(*) FILTER (WHERE p.sla_ma IS NOT NULL AND NOT t.la_ket_thuc
+                 AND t.ma<>'DA_GIAI_QUYET' AND (p.han_xu_ly<now()
+                   OR (p.ngay_phan_hoi_dau IS NULL AND p.han_phan_hoi<now()))) overdue
+    ''' + staff.FROM + where, params)
+    return cur.fetchone()
+
+
+def ticket_trend(cur, unit, step):
+    # The buckets include the current period and seven previous periods in Vietnam.
+    execute(cur, '''
+        WITH calendar AS (
+            SELECT generate_series(current_bucket - 7 * step, current_bucket, step) AS start_at, step
+            FROM (SELECT date_trunc(%s, now() AT TIME ZONE 'Asia/Ho_Chi_Minh') current_bucket,
+                         %s::interval AS step) period
+        )
+        SELECT to_char(c.start_at, %s) name, count(p.phieu_ma) count
+        FROM calendar c LEFT JOIN {phieu_ho_tro} p
+          ON p.ngay_tao >= (c.start_at AT TIME ZONE 'Asia/Ho_Chi_Minh')
+         AND p.ngay_tao < ((c.start_at + c.step) AT TIME ZONE 'Asia/Ho_Chi_Minh')
+        GROUP BY c.start_at ORDER BY c.start_at
+    ''', (unit, step, 'DD/MM/YYYY' if unit == 'week' else 'MM/YYYY'))
+    return cur.fetchall()
+
+
+def overview(actor, *, include_trends=False, **options):
     where,params=filters(**options)
     with manager_cursor(actor) as (cur,_):
-        execute(cur,"SELECT count(*) total,count(*) FILTER(WHERE t.ma='MOI') waiting,count(*) FILTER(WHERE t.ma='DANG_XU_LY') processing,count(*) FILTER(WHERE t.ma='TAM_DUNG') paused,count(*) FILTER(WHERE t.ma='DA_GIAI_QUYET') resolved,count(*) FILTER(WHERE t.ma='DA_DONG') closed"+staff.FROM+where,params)
-        result=cur.fetchone()
-        execute(cur,'SELECT count(*) n'+staff.FROM+where+" AND p.sla_ma IS NOT NULL AND NOT t.la_ket_thuc AND t.ma<>'DA_GIAI_QUYET' AND (p.han_xu_ly<now() OR (p.ngay_phan_hoi_dau IS NULL AND p.han_phan_hoi<now()))",params)
-        result['overdue']=cur.fetchone()['n']
+        result = ticket_counts(cur, where, params)
+        if include_trends:
+            result['by_week'] = ticket_trend(cur, 'week', '1 week')
+            result['by_month'] = ticket_trend(cur, 'month', '1 month')
         for key,expression in [('by_status','t.ten'),('by_group',"COALESCE(g.ten,'Chưa xác định nhóm')"),('by_type',"COALESCE(l.ten,'Chưa phân loại')"),('by_priority','u.ten')]:
             execute(cur,'SELECT '+expression+' name,count(*) count'+staff.FROM+where+' GROUP BY '+expression+' ORDER BY count DESC,name',params)
             result[key]=cur.fetchall()
@@ -163,6 +202,7 @@ def groups(actor,page=1,page_size=20):
 def group_detail(actor,group_id):
     with manager_cursor(actor) as (cur,_):
         group=group_row(cur,group_id)
+        group['stats'] = ticket_counts(cur, ' WHERE p.nhom_ma=%s', (group_id,))
         execute(cur,'''SELECT n.nd_ma::text id,n.ho_ten name,n.trang_thai status,
           (SELECT count(*) FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma) WHERE p.nhan_vien_phu_trach_ma=n.nd_ma AND NOT t.la_ket_thuc AND t.ma<>'DA_GIAI_QUYET') workload
           FROM {thanh_vien_nhom} m JOIN {nguoi_dung} n ON n.nd_ma=m.nhan_vien_ma WHERE m.nhom_ma=%s ORDER BY n.nd_ma''',(group_id,));group['people']=cur.fetchall()
@@ -204,24 +244,54 @@ def member_change(actor,group_id,employee_id,remove=False):
         return {'message':'Đã bỏ thành viên.' if remove else 'Đã thêm thành viên.'}
 
 
+MAX_GROUP_TYPES = 2
+
+
 def routing(actor):
     with manager_cursor(actor) as (cur,_):
-        execute(cur,'''SELECT l.ht_ma::text type_id,l.ten type_name,x.nhom_ma::text group_id,g.ten group_name,g.dang_hoat_dong group_active,
+        execute(cur,'''SELECT l.ht_ma::text type_id,l.ten type_name,l.dang_hoat_dong type_active,x.nhom_ma::text group_id,g.ten group_name,g.dang_hoat_dong group_active,
           (SELECT count(*) FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma) WHERE p.ht_ma=l.ht_ma AND p.nhom_ma IS NULL AND p.nhan_vien_phu_trach_ma IS NULL AND t.ma='MOI') waiting
-          FROM {loai_ho_tro} l LEFT JOIN {xu_ly_mac_dinh} x USING(ht_ma) LEFT JOIN {nhom_ho_tro} g USING(nhom_ma) WHERE l.dang_hoat_dong ORDER BY l.ht_ma''')
+          FROM {loai_ho_tro} l LEFT JOIN {xu_ly_mac_dinh} x USING(ht_ma) LEFT JOIN {nhom_ho_tro} g USING(nhom_ma) WHERE l.dang_hoat_dong OR x.ht_ma IS NOT NULL ORDER BY l.ht_ma''')
         return cur.fetchall()
 
 
-def update_routing(actor,type_id,body):
-    with manager_cursor(actor,True) as (cur,events):
-        execute(cur,'SELECT ht_ma FROM {loai_ho_tro} WHERE ht_ma=%s AND dang_hoat_dong FOR UPDATE',(type_id,))
-        if cur.fetchone() is None:raise HTTPException(404,'Không tìm thấy loại hỗ trợ hoạt động.')
-        group=group_row(cur,body.group_id,True)
-        if not group['active']:raise HTTPException(422,'Nhóm đích phải đang hoạt động.')
-        execute(cur,'SELECT nhom_ma FROM {xu_ly_mac_dinh} WHERE ht_ma=%s',(type_id,));previous=cur.fetchone()
-        if (previous['nhom_ma'] if previous else None)!=body.expected_group_id:raise HTTPException(409,'Ánh xạ đã thay đổi. Hãy làm mới trước khi lưu.')
-        execute(cur,'INSERT INTO {xu_ly_mac_dinh}(ht_ma,nhom_ma) VALUES(%s,%s) ON CONFLICT(ht_ma) DO UPDATE SET nhom_ma=EXCLUDED.nhom_ma',(type_id,body.group_id))
-        events.append(('routing.update',type_id));return {'message':'Đã lưu ánh xạ. Phiếu đã phân công giữ nguyên nhóm; phiếu chưa chốt nhóm dùng ánh xạ mới.'}
+def check_routing_version(cur, type_id, expected_group_id):
+    execute(cur, 'SELECT nhom_ma FROM {xu_ly_mac_dinh} WHERE ht_ma=%s FOR UPDATE', (type_id,))
+    previous = cur.fetchone()
+    if (previous['nhom_ma'] if previous else None) != expected_group_id:
+        raise HTTPException(409, 'Ánh xạ đã thay đổi. Hãy làm mới trước khi lưu.')
+
+
+def update_routing(actor, type_id, body):
+    # This transaction shares the coordination lock with all mapping and assignment writes.
+    with manager_cursor(actor, True) as (cur, events):
+        execute(cur, 'SELECT dang_hoat_dong FROM {loai_ho_tro} WHERE ht_ma=%s FOR UPDATE', (type_id,))
+        ticket_type = cur.fetchone()
+        if ticket_type is None:
+            raise HTTPException(404, 'Không tìm thấy loại hỗ trợ.')
+        check_routing_version(cur, type_id, body.expected_group_id)
+        if body.group_id == body.expected_group_id:
+            return {'message': 'Ánh xạ đã thuộc nhóm này.'}
+        if not ticket_type['dang_hoat_dong'] and body.expected_group_id is None:
+            raise HTTPException(422, 'Chỉ có thể thêm loại hỗ trợ đang hoạt động.')
+        group = group_row(cur, body.group_id, True)
+        if not group['active']:
+            raise HTTPException(422, 'Nhóm đích phải đang hoạt động.')
+        execute(cur, 'SELECT count(*) AS total FROM {xu_ly_mac_dinh} WHERE nhom_ma=%s', (body.group_id,))
+        if cur.fetchone()['total'] >= MAX_GROUP_TYPES:
+            raise HTTPException(409, 'Nhóm đích đã đủ 2 loại yêu cầu.')
+        execute(cur, '''INSERT INTO {xu_ly_mac_dinh}(ht_ma,nhom_ma) VALUES(%s,%s)
+                        ON CONFLICT(ht_ma) DO UPDATE SET nhom_ma=EXCLUDED.nhom_ma''', (type_id, body.group_id))
+        events.append(('routing.update', type_id))
+        return {'message': 'Đã lưu ánh xạ. Phiếu chưa chốt nhóm dùng ánh xạ mới.'}
+
+
+def remove_routing(actor, type_id, expected_group_id):
+    with manager_cursor(actor, True) as (cur, events):
+        check_routing_version(cur, type_id, expected_group_id)
+        execute(cur, 'DELETE FROM {xu_ly_mac_dinh} WHERE ht_ma=%s AND nhom_ma=%s', (type_id, expected_group_id))
+        events.append(('routing.remove', f'{type_id}:{expected_group_id}'))
+        return {'message': 'Đã bỏ ánh xạ. Loại yêu cầu hiện chưa có nhóm mặc định.'}
 
 
 def ticket_row(cur,ticket_id,lock=False):
@@ -403,7 +473,7 @@ def activity(actor,page=1,page_size=20,event_from=None,event_to=None,**options):
     event_where=' WHERE true'
     for value,op,extra in [(event_from,'>=',0),(event_to,'<',1)]:
         if value:
-            event_where+=' AND happened_at'+op+'%s';params.append(datetime.combine(value,time.min,timezone(timedelta(hours=7)))+timedelta(days=extra))
+            event_where+=' AND happened_at'+op+'%s';params.append(datetime.combine(value + timedelta(days=extra), time.min, ZoneInfo('Asia/Ho_Chi_Minh')))
     with manager_cursor(actor) as (cur,_):
         execute(cur,query+'SELECT count(*) total FROM events'+event_where,params);total=cur.fetchone()['total']
         execute(cur,query+'SELECT id,ticket_id,title,happened_at,kind,actor,detail FROM events'+event_where+' ORDER BY happened_at DESC,id DESC LIMIT %s OFFSET %s',params+[page_size,(page-1)*page_size])

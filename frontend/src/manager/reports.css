@@ -1,0 +1,77 @@
+.manager-report {
+  --report-created:#087b82;
+  --report-resolved:#a16508;
+}
+:root[data-theme=dark] .manager-report {--report-created:#65d8d0;--report-resolved:#f0c874}
+.panel.report-filters {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;
+  align-items:end;gap:12px;padding:16px 20px;
+}
+.report-filters .field,.manager-report .field {min-width:0}
+.report-filter-actions {display:flex;gap:8px;flex-wrap:wrap}
+.report-filters :is(input,select,.button) {min-height:42px;padding:8px 12px;font-size:13px}
+.report-metadata {margin-bottom:16px;overflow-wrap:anywhere}
+.report-metadata p {margin:4px 0;color:var(--muted)}
+.report-kpis,.report-columns {display:grid;gap:14px;margin-bottom:20px}
+.report-kpis {grid-template-columns:repeat(3,minmax(0,1fr))}
+.report-columns {grid-template-columns:repeat(2,minmax(0,1fr))}
+.report-kpi,.report-columns>.panel {margin:0;min-width:0}
+.report-kpi {padding:16px;border-inline-start:3px solid var(--report-created)}
+.report-kpi h3 {font-size:14px;margin:0 0 8px}
+.report-kpi strong {display:block;font-size:clamp(15px,2vw,22px);color:var(--link);overflow-wrap:anywhere}
+.report-kpi small {display:block;margin-top:5px;color:var(--muted)}
+.report-trend {margin:12px 0 0}
+.report-trend figcaption {font-size:13px;margin-bottom:6px}
+.report-trend figcaption span:first-child {color:var(--report-created)}
+.report-trend figcaption span:last-child {color:var(--report-resolved)}
+.report-trend svg {width:100%;display:block}
+.report-trend svg line {stroke:var(--border)}
+.report-trend svg text {font-size:12px;fill:var(--ink)}
+.report-chart-hit {fill:transparent}
+.report-chart-created {fill:var(--report-created)}
+.report-chart-resolved {fill:var(--report-resolved)}
+.report-chart-data {max-height:180px;overflow:auto;font-size:13px;padding:8px}
+.report-ratings {list-style:none;display:grid;gap:8px;padding:0}
+.report-ratings li {display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:8px;align-items:center}
+.report-ratings svg {width:100%;height:12px}
+.report-rating-track {fill:var(--border)}
+.report-sla-table {width:100%;text-align:left;border-collapse:collapse;font-size:13px}
+.report-sla-table :is(th,td) {border-bottom:1px solid var(--border);padding:8px 4px}
+.report-group-scroll {max-height:420px;overflow:auto}
+.report-print-only {display:none}
+@media(max-width:1080px) {
+  .panel.report-filters {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .report-columns {grid-template-columns:1fr}
+}
+@media(max-width:600px) {
+  .report-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panel.report-filters {grid-template-columns:minmax(0,1fr)}
+  .report-trend svg text {font-size:19px}
+}
+@page helpdesk-report {size:A4;margin:13mm}
+@media print {
+  body:has(.manager-report) {background:white;color:#153a3d}
+  body:has(.manager-report) :is(.sidebar,.dashboard-top,.skip-link,dialog) {display:none!important}
+  body:has(.manager-report) :is(.dashboard,.dashboard-main,.dashboard-main>.container) {
+    display:block!important;width:auto;max-width:none;margin:0;padding:0;min-height:0;overflow:visible;
+  }
+  :root .manager-report, :root[data-theme=dark] .manager-report {
+    page:helpdesk-report;
+    --surface:#fff;--canvas:#fff;--ink:#153a3d;--muted:#405658;--border:#ccd9d8;
+    --link:#087b82;--report-created:#087b82;--report-resolved:#a16508;
+    background:#fff;color:var(--ink);print-color-adjust:exact;-webkit-print-color-adjust:exact;
+  }
+  .manager-report .report-screen-only {display:none!important}
+  .manager-report .report-print-only {display:block}
+  .manager-report .panel {padding:12px;margin-bottom:10px;box-shadow:none}
+  .manager-report .report-kpis {grid-template-columns:repeat(3,minmax(0,1fr))}
+  .manager-report .report-columns {display:block}
+  .manager-report :is(.report-print-block,.report-kpi,.report-trend,tr) {break-inside:avoid}
+  .manager-report .report-group-scroll {max-height:none;overflow:visible}
+  .manager-report .ticket-table {min-width:0;font-size:10px}
+  .manager-report .ticket-table thead {display:table-header-group}
+  .manager-report .ticket-table tbody {display:table-row-group}
+  .manager-report .ticket-table tr {display:table-row}
+  .manager-report .ticket-table :is(th,td) {display:table-cell;padding:5px;overflow-wrap:anywhere}
+  .manager-report .ticket-table td[data-label]::before {display:none}
+}

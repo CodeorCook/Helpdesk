@@ -1,5 +1,5 @@
 """Isolated API/security tests. Repository doubles only here; no DB writes."""
-import hashlib
+from datetime import datetime, timedelta, timezone
 import os
 import secrets
 import time
@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from jose import jwt
 from api.routes.auth import _attempts
 from core.database import ConfigurationError
-from core.security import COOKIE_NAME, PASSWORD_HASHER, issue_session, signing_key, verify_password
+from core.security import COOKIE_NAME, PASSWORD_HASHER, signing_key, verify_password
 from main import app
 from services import auth_service
 
@@ -30,7 +30,7 @@ class AuthTests(unittest.TestCase):
         _attempts.clear()
         self.client = TestClient(app)
         self.account = {"nd_ma": 1, "ho_ten": "Tài khoản kiểm thử", "email": "test@example.invalid", "mat_khau_hash": self.hashed,
-                        "vai_tro": "QUAN_TRI_VIEN", "trang_thai": "HOAT_DONG"}
+                        "vai_tro": "QUAN_TRI_VIEN", "trang_thai": "HOAT_DONG", "ngay_cap_nhat": datetime.now(timezone.utc)}
         self.repository = patch.object(auth_service, "find_account", side_effect=lambda **kw: self.account)
         self.repository.start()
 
@@ -72,6 +72,18 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/v1/manager/dashboard").status_code, 403)
         self.account["trang_thai"] = "KHOA"
         self.assertEqual(self.client.get("/api/v1/auth/me").status_code, 401)
+
+    def test_unlock_requires_a_fresh_session(self):
+        self.assertEqual(self.login().status_code, 200)
+        self.account["trang_thai"] = "KHOA"
+        self.assertEqual(self.login().status_code, 401)
+        self.assertEqual(self.client.get("/api/v1/auth/me").status_code, 401)
+        self.account["trang_thai"] = "HOAT_DONG"
+        self.account["ngay_cap_nhat"] += timedelta(microseconds=1)
+        self.assertEqual(self.client.get("/api/v1/auth/me").status_code, 401)
+        self.assertEqual(self.client.get("/api/v1/auth/csrf").status_code, 401)
+        self.assertEqual(self.login().status_code, 200)
+        self.assertEqual(self.client.get("/api/v1/auth/me").status_code, 200)
 
     def test_roles_enforced_on_server(self):
         for stored, (role, label) in auth_service.ROLES.items():

@@ -19,3 +19,56 @@
  .sidebar-footer{flex-shrink:0;margin-top:0}
 }
 @media(max-width:800px){.sidebar-menu>.eyebrow{display:none}}
+
+.customer-history-filters {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:end;
+  gap:12px 16px;
+  padding:16px 20px;
+}
+.customer-history-filters .field {min-width:0;gap:6px;font-size:12px}
+.customer-history-filters .field input,
+.customer-history-filters .field select {
+  height:42px;
+  min-height:42px;
+  padding:8px 10px;
+  font-size:13px;
+}
+.customer-history-filters .actions {gap:8px}
+.customer-history-filters .button {min-height:42px;padding:8px 14px;font-size:13px}
+
+.panel.customer-history-panel {padding:16px 20px 0}
+.customer-history-table .ticket-title {overflow-wrap:anywhere}
+.customer-history-pagination {
+  display:grid;
+  grid-template-columns:1fr minmax(0,auto) 1fr;
+  align-items:center;
+  gap:8px;
+  padding:14px 0;
+  border-top:1px solid var(--border);
+  color:var(--muted);
+  font-size:13px;
+}
+.customer-history-pagination > span {display:grid;gap:4px;text-align:center}
+.customer-history-pagination strong {color:var(--ink)}
+.customer-history-pagination small {font-size:11px;line-height:1.5}
+.customer-history-pagination .button {min-height:38px;padding:8px 12px;font-size:12px;justify-self:start}
+.customer-history-pagination .button:last-child {justify-self:end}
+
+@media(min-width:801px) {
+  .customer-history-table {--ticket-heading-height:54px;--ticket-row-height:88px}
+  .customer-history-table {
+    min-height:calc(var(--ticket-heading-height) + 5 * var(--ticket-row-height));
+  }
+  .customer-history-table .ticket-table th {height:var(--ticket-heading-height)}
+  .customer-history-table .ticket-table td {height:var(--ticket-row-height)}
+}
+@media(max-width:800px) {
+  .customer-history-filters {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .customer-history-filters .actions {grid-column:1/-1}
+}
+@media(max-width:520px) {
+  .panel.customer-history-filters {grid-template-columns:minmax(0,1fr);padding:14px}
+  .panel.customer-history-panel {padding:12px 12px 0}
+}

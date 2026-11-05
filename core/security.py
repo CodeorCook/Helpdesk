@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import os
@@ -42,12 +43,20 @@ def verify_password(password: str, encoded: str) -> bool:
 def burn_password_check(password: str):
     verify_password(password, DUMMY_HASH)
 
-def issue_session(user_id: str) -> tuple[str, str]:
+def account_session_version(updated_at: datetime) -> str:
+    return updated_at.astimezone(timezone.utc).isoformat()
+
+
+def refresh_account_session(claims: dict, updated_at: datetime) -> str:
+    return jwt.encode({**claims, "account_version": account_session_version(updated_at)}, signing_key(), algorithm="HS256")
+
+
+def issue_session(user_id: str, account_version: str) -> tuple[str, str]:
     now = int(time.time())
     session_id = secrets.token_urlsafe(24)
     csrf = csrf_for(session_id)
     token = jwt.encode({"sub": user_id, "iat": now, "exp": now + session_seconds(),
-        "iss": "helpdesk", "aud": "helpdesk-web", "jti": session_id,
+        "iss": "helpdesk", "aud": "helpdesk-web", "jti": session_id, "account_version": account_version,
         "csrf": hashlib.sha256(csrf.encode()).hexdigest()}, signing_key(), algorithm="HS256")
     return token, csrf
 
@@ -59,7 +68,7 @@ def decode_session(token: str) -> dict:
     try:
         claims = jwt.decode(token, signing_key(), algorithms=["HS256"], audience="helpdesk-web", issuer="helpdesk",
             options={"require_exp": True, "require_iat": True, "require_sub": True})
-        if not isinstance(claims.get("csrf"), str) or not isinstance(claims.get("jti"), str):
+        if not all(isinstance(claims.get(key), str) for key in ("csrf", "jti", "account_version")):
             raise JWTError()
         return claims
     except JWTError as exc:

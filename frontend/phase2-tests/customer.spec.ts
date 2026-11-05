@@ -41,7 +41,7 @@ test('register → login → create → list/detail → message/file → profile
  expect((await downloadPromise).suggestedFilename()).toBe('browser.txt');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  await page.screenshot({path:`test-results/customer-detail-${testInfo.project.name}.png`,fullPage:true});
- await page.getByRole('navigation',{name:'Không gian Khách hàng'}).getByRole('link',{name:'Phiếu của tôi',exact:true}).click();
+ await page.getByRole('navigation',{name:'Không gian Khách hàng'}).getByRole('link',{name:'Lịch sử yêu cầu',exact:true}).click();
  await page.getByLabel('Tiêu đề phiếu').fill('Yêu cầu từ trình duyệt');
  await page.getByRole('button',{name:'Áp dụng',exact:true}).click();
  await expect(page.getByRole('link',{name:'Yêu cầu từ trình duyệt',exact:true})).toBeVisible();

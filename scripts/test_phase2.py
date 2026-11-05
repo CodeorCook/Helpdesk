@@ -195,7 +195,7 @@ def run_final_stages(stage,conn,client,other,headers,other_headers,ticket,other_
 
 def run_stage_e(conn,client,other,headers,other_headers,ticket,user_id,base):
     from services import customer_service as service
-    from core.security import COOKIE_NAME, issue_session
+    from core.security import COOKIE_NAME, account_session_version, issue_session
     assert client.patch('/api/v1/customer/profile',json={'name':'Changed'}).status_code==403
     for invalid in [{'vai_tro':'QUAN_TRI_VIEN'},{'email':'changed@example.invalid'},{'name':None},{}]:
         assert client.patch('/api/v1/customer/profile',json=invalid,headers=headers).status_code==422
@@ -228,18 +228,18 @@ def run_stage_e(conn,client,other,headers,other_headers,ticket,user_id,base):
         # Controlled role fixtures only; all rolled back, no public staff/manager registration.
         for stored,profile in [('NHAN_VIEN','nhan_vien'),('QUAN_TRI_VIEN','quan_tri_vien')]:
             email=f'{secrets.token_hex(10)}@example.invalid'
-            service.execute(cur,'INSERT INTO {nguoi_dung} (ho_ten,email,mat_khau_hash,vai_tro) VALUES (%s,%s,%s,%s) RETURNING nd_ma',('Role fixture',email,PASSWORD_HASHER.hash(secrets.token_urlsafe(24)),stored))
-            uid=cur.fetchone()[0]
+            service.execute(cur,'INSERT INTO {nguoi_dung} (ho_ten,email,mat_khau_hash,vai_tro) VALUES (%s,%s,%s,%s) RETURNING nd_ma,ngay_cap_nhat',('Role fixture',email,PASSWORD_HASHER.hash(secrets.token_urlsafe(24)),stored))
+            uid,updated_at=cur.fetchone()
             cur.execute(sql.SQL('INSERT INTO {} (nd_ma) VALUES (%s)').format(sql.Identifier(database_schema(),profile)),(uid,))
             with TestClient(app,raise_server_exceptions=False) as forbidden:
-                token,csrf=issue_session(str(uid));forbidden.cookies.set(COOKIE_NAME,token,path='/api/v1')
+                token,csrf=issue_session(str(uid),account_session_version(updated_at));forbidden.cookies.set(COOKIE_NAME,token,path='/api/v1')
                 for path in ['/api/v1/customer/overview','/api/v1/customer/tickets','/api/v1/customer/profile',base]:
                     assert forbidden.get(path).status_code==403
                 assert forbidden.post('/api/v1/customer/tickets',json={'title':'x','description':'x','type_id':1},headers={'Origin':'http://localhost:5173','X-CSRF-Token':csrf}).status_code==403
-        service.execute(cur,'INSERT INTO {nguoi_dung} (ho_ten,email,mat_khau_hash,vai_tro) VALUES (%s,%s,%s,%s) RETURNING nd_ma',('Missing profile',f'{secrets.token_hex(10)}@example.com',PASSWORD_HASHER.hash(secrets.token_urlsafe(24)),'KHACH_HANG'))
-        uid=cur.fetchone()[0]
+        service.execute(cur,'INSERT INTO {nguoi_dung} (ho_ten,email,mat_khau_hash,vai_tro) VALUES (%s,%s,%s,%s) RETURNING nd_ma,ngay_cap_nhat',('Missing profile',f'{secrets.token_hex(10)}@example.com',PASSWORD_HASHER.hash(secrets.token_urlsafe(24)),'KHACH_HANG'))
+        uid,updated_at=cur.fetchone()
         with TestClient(app,raise_server_exceptions=False) as missing:
-            token,_=issue_session(str(uid));missing.cookies.set(COOKIE_NAME,token,path='/api/v1')
+            token,_=issue_session(str(uid),account_session_version(updated_at));missing.cookies.set(COOKIE_NAME,token,path='/api/v1')
             assert missing.get('/api/v1/customer/profile').status_code==409
     print('PASS E: profile whitelist/CSRF, resolved-only close with atomic history, closed-only one-time owner rating, staff/manager forbidden')
 

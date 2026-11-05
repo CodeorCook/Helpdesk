@@ -256,14 +256,17 @@ def profile(user_id):
         return cur.fetchone()
 
 
-def update_profile(user_id, body):
+def update_profile(user_id, body, account_version):
     values = body.model_dump(exclude_unset=True)
     if not values:
         raise HTTPException(422, "Chọn thông tin hồ sơ cần cập nhật.")
     columns = {"name":"ho_ten", "phone":"so_dien_thoai", "gender":"gioi_tinh"}
     assignments = [sql.SQL("{}=%s").format(sql.Identifier(columns[key])) for key in values]
     with customer_cursor(user_id,lock_user=True) as cur:
-        query = sql.SQL("UPDATE {} SET {},ngay_cap_nhat=now() WHERE nd_ma=%s RETURNING ho_ten AS name,email,so_dien_thoai AS phone,gioi_tinh AS gender").format(
+        query = sql.SQL("UPDATE {} SET {},ngay_cap_nhat=GREATEST(clock_timestamp(), ngay_cap_nhat + interval '1 microsecond') WHERE nd_ma=%s AND ngay_cap_nhat=%s RETURNING ho_ten AS name,email,so_dien_thoai AS phone,gioi_tinh AS gender,ngay_cap_nhat").format(
             sql.Identifier(database_schema(),"nguoi_dung"),sql.SQL(",").join(assignments))
-        cur.execute(query,[*values.values(),user_id])
-        return cur.fetchone()
+        cur.execute(query,[*values.values(),user_id,datetime.fromisoformat(account_version)])
+        profile = cur.fetchone()
+        if profile is None:
+            raise HTTPException(401, "Phiên đã hết hiệu lực. Vui lòng đăng nhập lại.")
+        return profile

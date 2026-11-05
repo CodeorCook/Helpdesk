@@ -8,14 +8,15 @@ from fastapi.responses import FileResponse
 from api.routes.auth import require_role
 from api.routes.customer import mutation_guard
 from schemas.auth import UserResponse
-from schemas.manager import Account,AccountPage,AccountUpdate,EmployeeCreate,RoleChange,StoredRole,ManagerOverview
+from schemas.manager import Account,AccountPage,AccountUpdate,EmployeeCreate,RoleChange,StoredRole,DashboardOverview
 from schemas.manager import GroupInput,GroupUpdate,Group,GroupDetail,GroupPage,MemberInput,Message,Routing,RoutingInput
 from schemas.manager import AssignmentInput
 from schemas.manager import SLAInput,SLAUpdate,SLAApply,Policy,PolicyPage
-from schemas.manager import ReportPage,ActivityPage
+from schemas.manager import ReportAnalytics,ReportPage,ActivityPage
 from schemas.staff import StaffPage,StaffTicket,StaffDetail,Employee
 from schemas.customer import CatalogItem
 from services import manager_service as service
+from services import report_service
 
 router=APIRouter(prefix='/api/v1/manager',tags=['Quản lý'])
 manager=require_role('manager')
@@ -23,8 +24,8 @@ def ID():
     return Path(gt=0,le=9223372036854775807)
 
 
-@router.get('/overview',response_model=ManagerOverview)
-def overview(user:UserResponse=Depends(manager)):return service.overview(user.id)
+@router.get('/overview',response_model=DashboardOverview)
+def overview(user:UserResponse=Depends(manager)):return service.overview(user.id, include_trends=True)
 
 
 @router.get('/users',response_model=AccountPage)
@@ -79,6 +80,12 @@ def routing(user:UserResponse=Depends(manager)):return service.routing(user.id)
 
 @router.patch('/routing/{type_id}',response_model=Message,dependencies=[Depends(mutation_guard)])
 def update_routing(body:RoutingInput,type_id:int=ID(),user:UserResponse=Depends(manager)):return service.update_routing(user.id,type_id,body)
+
+
+@router.delete('/routing/{type_id}', response_model=Message, dependencies=[Depends(mutation_guard)])
+def remove_routing(type_id: int = ID(), expected_group_id: int = Query(..., gt=0, le=9223372036854775807),
+                   user: UserResponse = Depends(manager)):
+    return service.remove_routing(user.id, type_id, expected_group_id)
 
 
 def ticket_filters(search:str=Query('',max_length=200),type_id:int|None=Query(None,alias='type',gt=0,le=9223372036854775807),
@@ -140,6 +147,26 @@ def apply_sla(body:SLAApply,ticket_id:int=ID(),user:UserResponse=Depends(manager
 @router.get('/reports',response_model=ReportPage)
 def reports(filters:dict=Depends(ticket_filters),page:int=Query(1,ge=1,le=100000),page_size:int=Query(10,ge=1,le=50),user:UserResponse=Depends(manager)):
     return service.reports(user.id,page,page_size,**filters)
+
+
+def analytics_filters(preset: Literal['today','7d','30d','month','custom']='30d',
+                      start: date | None=Query(None,le=date(9998,12,31)),
+                      end: date | None=Query(None,le=date(9998,12,31)),
+                      group_id: int | None=Query(None,alias='group',gt=0,le=9223372036854775807),
+                      type_id: int | None=Query(None,alias='type',gt=0,le=9223372036854775807)):
+    start, end = report_service.report_period(preset, start, end)
+    return dict(start=start, end=end, group_id=group_id, type_id=type_id)
+
+
+@router.get('/reports/analytics',response_model=ReportAnalytics)
+def report_analytics(filters: dict=Depends(analytics_filters), user: UserResponse=Depends(manager)):
+    return report_service.analytics(user.id, **filters)
+
+
+@router.get('/reports/activity', response_model=ActivityPage)
+def report_activity(filters: dict=Depends(analytics_filters), page: int=Query(1,ge=1,le=100000),
+                    user: UserResponse=Depends(manager)):
+    return report_service.report_activity(user.id, page=page, **filters)
 
 
 @router.get('/activity',response_model=ActivityPage)
