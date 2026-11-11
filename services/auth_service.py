@@ -71,9 +71,28 @@ def login(email: str, password: str) -> tuple[UserResponse, str]:
         burn_password_check(password)
         raise HTTPException(401, "Email hoặc mật khẩu không chính xác, hoặc tài khoản không hoạt động.")
     valid = verify_password(password, account["mat_khau_hash"])
-    if not valid or account["trang_thai"] != "HOAT_DONG":
+    if not valid:
+        raise HTTPException(401, "Email hoặc mật khẩu không chính xác, hoặc tài khoản không hoạt động.")
+    if account["trang_thai"] == "KHOA":
+        reason = active_lock_reason(account["nd_ma"])
+        detail = "Tài khoản của bạn đã bị khóa."
+        if reason:
+            detail += f"\nLý do: {reason}"
+        raise HTTPException(403, detail + "\nVui lòng liên hệ bộ phận quản lý để được hỗ trợ.")
+    if account["trang_thai"] != "HOAT_DONG":
         raise HTTPException(401, "Email hoặc mật khẩu không chính xác, hoặc tài khoản không hoạt động.")
     return public_user(account), account_session_version(account["ngay_cap_nhat"])
+
+
+def active_lock_reason(account_id):
+    table = sql.Identifier(database_schema(), 'account_lock_event')
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute('SELECT to_regclass(%s)', (table.as_string(cur),))
+        if cur.fetchone()[0] is None:
+            return None
+        cur.execute(sql.SQL('SELECT reason FROM {} WHERE account_id=%s ORDER BY id DESC LIMIT 1').format(table), (account_id,))
+        row = cur.fetchone()
+        return row[0] if row else None
 
 
 def current_user(user_id: str, account_version: str) -> UserResponse:

@@ -54,7 +54,7 @@ WITH bounds AS (
            responded >= start_at AND responded < end_at response_in_period,
            resolved >= start_at AND resolved < end_at resolution_in_period,
            rated >= start_at AND rated < end_at rating_in_period,
-           closed >= start_at AND closed < end_at close_in_period,
+           status='DA_DONG' AND closed >= start_at AND closed < end_at close_in_period,
            sla_ma IS NOT NULL AND COALESCE(response_due > created, false) has_response_sla,
            sla_ma IS NOT NULL AND COALESCE(resolution_due > created, false) has_resolution_sla
     FROM timestamps

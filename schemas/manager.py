@@ -7,6 +7,13 @@ from core.validation import validate_phone
 
 StoredRole = Literal['KHACH_HANG','NHAN_VIEN','QUAN_TRI_VIEN']
 ID_MAX = 9223372036854775807
+SLAState = Literal['within','soon','overdue','ended','none']
+
+
+class Membership(BaseModel):
+    id: str
+    name: str
+    pending: int
 
 
 class EmployeeCreate(RegisterRequest):
@@ -23,6 +30,7 @@ class Account(BaseModel):
     status: Literal['HOAT_DONG','KHOA']
     created_at: datetime
     updated_at: datetime
+    memberships: list[Membership] = Field(default_factory=list)
 
 
 class AccountPage(BaseModel):
@@ -37,6 +45,7 @@ class AccountUpdate(StrictInput):
     phone: str | None = Field(default=None,max_length=20)
     status: Literal['HOAT_DONG','KHOA']
     expected_updated_at: datetime
+    lock_reason: str | None = Field(default=None, max_length=500, repr=False)
     _phone_valid = field_validator('phone')(validate_phone)
 
     @field_validator('name')
@@ -82,6 +91,7 @@ class Member(BaseModel):
     name: str
     status: str
     workload: int
+    memberships: list[Membership] = Field(default_factory=list)
 
 
 class SimpleItem(BaseModel):
@@ -128,6 +138,10 @@ class GroupPage(BaseModel):
 
 class MemberInput(StrictInput):
     employee_id: int = Field(gt=0,le=ID_MAX)
+
+
+class MembershipChange(MemberInput):
+    expected_groups: list[int] = Field(min_length=1, max_length=100)
 
 
 class RoutingInput(StrictInput):

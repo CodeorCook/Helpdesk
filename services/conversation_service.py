@@ -28,8 +28,10 @@ def conversation(role,user_id,ticket_id,after=None,before=None):
         if before is not None:conditions.append('m.tn_ma<%s');params.append(before)
         order='ASC' if after is not None else 'DESC'
         staff.execute(cur,'''SELECT m.tn_ma::text id,m.nguoi_gui_ma::text sender_id,n.ho_ten sender,
-          m.noi_dung content,m.la_ghi_chu_noi_bo internal,m.thoi_gian created_at
-          FROM {tin_nhan} m JOIN {nguoi_dung} n ON n.nd_ma=m.nguoi_gui_ma WHERE '''+' AND '.join(conditions)+' ORDER BY m.tn_ma '+order+' LIMIT 101',params)
+          m.noi_dung content,m.la_ghi_chu_noi_bo internal,m.thoi_gian created_at,
+          m.nguoi_gui_ma=p.khach_hang_ma AND NOT m.la_ghi_chu_noi_bo from_customer
+          FROM {tin_nhan} m JOIN {phieu_ho_tro} p USING(phieu_ma)
+          JOIN {nguoi_dung} n ON n.nd_ma=m.nguoi_gui_ma WHERE '''+' AND '.join(conditions)+' ORDER BY m.tn_ma '+order+' LIMIT 101',params)
         rows=cur.fetchall();overflow=len(rows)>100;messages=rows[:100]
         if after is None:messages.reverse()
         staff.execute(cur,'''SELECT tep_ma::text id,ten name,mime_type,kich_thuoc_byte size,
@@ -50,6 +52,8 @@ def conversation(role,user_id,ticket_id,after=None,before=None):
         # Customer TicketResponse intentionally has no assigned ID; retrieve only public identity.
         staff.execute(cur,'SELECT nhan_vien_phu_trach_ma::text id FROM {phieu_ho_tro} WHERE phieu_ma=%s',(ticket_id,));assigned=cur.fetchone()['id']
         return dict(ticket_id=str(ticket_id),status=ticket['status'],status_label=ticket['status_label'],assigned_id=assigned,assigned_to=ticket['assigned_to'],group_id=ticket.get('group_id') if private else None,can_send=can_send,can_view_internal=private,
+                    can_send_internal=can_send if role=='staff' else role=='manager' and manager.can_reply_to_staff(cur,ticket),
+                    can_mark_read=role=='staff' and assigned==str(user_id) and staff.read_receipts_available(cur),
                     messages=messages,has_older=overflow if after is None else False,has_more=overflow if after is not None else False,events=events,attachments=attachments)
 
 

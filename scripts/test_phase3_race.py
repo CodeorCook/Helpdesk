@@ -12,7 +12,7 @@ import threading
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from fastapi.testclient import TestClient
 from psycopg.rows import dict_row
-from core.database import get_connection
+from core.database import database_schema, get_connection
 from core.security import PASSWORD_HASHER
 from services.staff_service import execute
 from main import app
@@ -25,6 +25,9 @@ def main():
     users=[];group=None;kind=None
     try:
         with get_connection() as conn,conn.cursor(row_factory=dict_row) as cur:
+            execute(cur,"SELECT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid=to_regclass(%s) AND attname='yeu_cau_goc' AND NOT attisdropped) AS ready",
+                    (f'{database_schema()}.phieu_ho_tro',))
+            assert cur.fetchone()['ready'], 'Cần schema kiểm thử đã áp dụng migration snapshot trước khi chạy race thật.'
             for i,role in enumerate(['KHACH_HANG','NHAN_VIEN','NHAN_VIEN','NHAN_VIEN']):
                 execute(cur,'INSERT INTO {nguoi_dung}(ho_ten,email,mat_khau_hash,vai_tro) VALUES(%s,%s,%s,%s) RETURNING nd_ma',(prefix+str(i),f'{prefix}-{i}@example.com',PASSWORD_HASHER.hash(password),role));uid=cur.fetchone()['nd_ma'];users.append(uid)
                 execute(cur,'INSERT INTO {'+('khach_hang' if i==0 else 'nhan_vien')+'}(nd_ma) VALUES(%s)',(uid,))
@@ -36,12 +39,15 @@ def main():
         for i in range(4):
             c=TestClient(app,raise_server_exceptions=False);r=c.post('/api/v1/auth/login',json=dict(email=f'{prefix}-{i}@example.com',password=password),headers=origin);assert r.status_code==200,r.text;clients.append(c)
         headers=[{**origin,'X-CSRF-Token':c.get('/api/v1/auth/csrf').json()['csrf_token']} for c in clients]
-        r=clients[0].post('/api/v1/customer/tickets',json=dict(title='Sofa race fixture',description='Private fixture',type_id=kind),headers=headers[0]);assert r.status_code==201,r.text;ticket=r.json()['id']
+        r=clients[0].post('/api/v1/customer/tickets',json=dict(title='Sofa race fixture',description='Private fixture',type_id=kind),headers=headers[0]);assert r.status_code==201,r.text;created=r.json();ticket=created['id']
         barrier=threading.Barrier(2)
-        def accept(i):
+        priorities=clients[1].get('/api/v1/staff/priorities').json()
+        approval=dict(title='Sofa đã chuẩn hóa',description=created['description'],type_id=kind,
+                      priority_id=priorities[0]['id'],expected_updated_at=created['updated_at'])
+        def approve(i):
             barrier.wait(timeout=10)
-            r=clients[i].post(f'/api/v1/staff/tickets/{ticket}/accept',headers=headers[i]);return i,r.status_code,r.text
-        with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(accept,[1,2]))
+            r=clients[i].post(f'/api/v1/staff/tickets/{ticket}/approve',json=approval,headers=headers[i]);return i,r.status_code,r.text
+        with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(approve,[1,2]))
         assert sorted(r[1] for r in results)==[200,409],results
         winner=next(i for i,status,_ in results if status==200)
         detail=clients[winner].get('/api/v1/staff/tickets/'+ticket).json();assignment=detail['assignment_id']
@@ -57,7 +63,7 @@ def main():
         assert sorted(r[0] for r in results)==[200,409],results
         with get_connection() as conn,conn.cursor(row_factory=dict_row) as cur:
             execute(cur,'SELECT ket_thuc FROM {lich_su_phan_cong} WHERE phieu_ma=%s ORDER BY pc_ma',(ticket,));history=cur.fetchall();assert len(history)==2 and history[0]['ket_thuc'] is not None and history[1]['ket_thuc'] is None
-        print('PASS real PostgreSQL race: accept200/409, same ticket ID, one active assignment; transfer200/409, old assignment retained.')
+        print('PASS real PostgreSQL race: approve200/409, same ticket ID, one active assignment; transfer200/409, old assignment retained.')
     finally:
         if users:
             with get_connection() as conn,conn.cursor(row_factory=dict_row) as cur:

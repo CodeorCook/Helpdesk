@@ -60,30 +60,241 @@ for(const theme of ['light','dark'])for(const path of ['/staff','/staff/queue','
    await expect(page.getByRole('button',{name:'Làm mới',exact:true})).toHaveCount(0);await expect(page.locator('.staff-stat-assigned h2')).toHaveText('17');await expect(page.locator('.staff-stat-queue h2')).toHaveText('12');await expect(page.locator('.staff-stat-overdue h2')).toHaveText('2');await expect(page.locator('.staff-stat-queue small')).toContainText('3 phiếu ưu tiên');
    const account=(await page.locator('.staff-account-panel').boundingBox())!;const stats=(await page.locator('.staff-stats-grid').boundingBox())!;expect(account.y+account.height).toBeLessThanOrEqual(stats.y);
    const backgrounds=await page.locator('.staff-stat').evaluateAll(items=>items.map(e=>getComputedStyle(e).backgroundColor));expect(new Set(backgrounds).size).toBe(3);
+  }else if(path.endsWith('queue')){
+   await expect(page.locator('.staff-queue-table tbody tr')).toHaveCount(5);
+   await expect(page.locator('.staff-filter-panel')).toHaveCount(0);
+   await expect(page.getByText('Ưu tiên cho bạn',{exact:true})).toHaveCount(1);
+   await expect(page.getByRole('combobox',{name:'Sắp xếp theo'})).toHaveValue('newest');
   }else{
-   await expect(page.locator('.ticket-table tbody tr')).toHaveCount(path.endsWith('mine')?5:10);const panel=page.locator('.staff-ticket-panel');await expect(panel.locator('.staff-pagination')).toBeVisible();const scroller=page.locator('.staff-ticket-scroll');const height=(await scroller.boundingBox())!.height;expect(height).toBeGreaterThanOrEqual(330);if(path.endsWith('queue')){expect(await scroller.evaluate(e=>e.scrollHeight>e.clientHeight)).toBeTruthy();await scroller.hover();await page.mouse.wheel(0,450);await expect.poll(()=>scroller.evaluate(e=>e.scrollTop)).toBeGreaterThan(0)}else expect(await scroller.evaluate(e=>e.scrollHeight-e.clientHeight)).toBeLessThanOrEqual(1);await expect(panel.getByRole('button',{name:'Sau',exact:true})).toBeVisible();
-   if(path.endsWith('queue'))await expect(page.getByText('Ưu tiên cho bạn',{exact:true})).toHaveCount(1);
-   else{
-    expect(new Set(await page.locator('.staff-status-badge').evaluateAll(items=>items.map(e=>getComputedStyle(e).backgroundColor))).size).toBe(5);
-    expect(await page.locator('.staff-view-button').first().evaluate(e=>getComputedStyle(e).backgroundColor)).toBe(await page.getByRole('button',{name:'Lọc phiếu',exact:true}).evaluate(e=>getComputedStyle(e).backgroundColor));
-    await page.locator('.staff-pagination').getByRole('button',{name:'Sau',exact:true}).click();await expect(page.locator('.staff-pagination')).toContainText('Trang 2');await expect(page.locator('.ticket-table tbody tr').first()).toContainText('Phiếu 6');expect(Math.abs((await scroller.boundingBox())!.height-height)).toBeLessThan(1);
-   }
+   await expect(page.locator('.ticket-table tbody tr')).toHaveCount(5);
+   const panel=page.locator('.staff-ticket-panel');await expect(panel.locator('.staff-pagination')).toBeVisible();
+   const scroller=page.locator('.staff-ticket-scroll');const height=(await scroller.boundingBox())!.height;
+   expect(height).toBeGreaterThanOrEqual(330);
+   expect(await scroller.evaluate(e=>e.scrollHeight-e.clientHeight)).toBeLessThanOrEqual(1);
+   expect(new Set(await panel.locator('td[data-label="Trạng thái"] .staff-status-badge').evaluateAll(items=>items.map(e=>getComputedStyle(e).backgroundColor))).size).toBe(5);
+   await expect(panel.locator('thead th')).toHaveText(['Phiếu','Nhóm hỗ trợ','Trạng thái','Mức độ ưu tiên']);
+   await expect(page.getByRole('combobox',{name:'Loại hỗ trợ',exact:true})).toHaveCount(0);
+   await panel.getByRole('button',{name:'Sau',exact:true}).click();await expect(page.locator('.staff-pagination')).toContainText('Trang 2');await expect(page.locator('.ticket-table tbody tr').first()).toContainText('Phiếu 6');expect(Math.abs((await scroller.boundingBox())!.height-height)).toBeLessThan(1);
    expect(calls.some(c=>c.url.pathname==='/api/v1/staff/tickets'&&c.url.searchParams.get('scope')===(path.endsWith('mine')?'mine':'queue'))).toBeTruthy();
   }
   await expect(page.locator('html')).toHaveAttribute('data-theme',theme);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();expect(errors).toEqual([]);await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:`test-results/staff-ui-${path.split('/').at(-1)}-${theme}-${info.project.name}.png`,fullPage:true});
  });
 }
 
-test('redirects, reset filters, stale fetch isolation, acceptance and visible409',async({page})=>{
- const {calls,setConflict}=await fixtures(page);await page.goto('/staff/recommended');await expect(page).toHaveURL('/staff/queue');await expect(page.locator('.ticket-table tbody tr')).toHaveCount(10);
- const form=page.locator('.staff-filter-panel');await page.getByLabel('Mã hoặc tiêu đề').fill('sofa');await page.getByRole('combobox',{name:'Loại hỗ trợ',exact:true}).selectOption('6');await page.getByRole('combobox',{name:'Trạng thái',exact:true}).selectOption('MOI');await page.getByRole('combobox',{name:'Ưu tiên',exact:true}).selectOption('2');await page.getByLabel('Từ ngày').fill('2026-11-01');await page.getByLabel('Đến ngày').fill('2026-11-02');await page.getByRole('button',{name:'Lọc phiếu',exact:true}).click();await expect(page.locator('.ticket-table tbody tr').first()).toContainText('sofa');
- const filtered=calls.filter(c=>c.url.searchParams.get('search')==='sofa').at(-1)!.url.searchParams;for(const [k,v] of Object.entries({type:'6',status:'MOI',priority:'2',from:'2026-11-01',to:'2026-11-02',page:'1',scope:'queue'}))expect(filtered.get(k)).toBe(v);
- await page.locator('.sidebar').getByRole('link',{name:'Phiếu của tôi',exact:true}).click();await expect(page.getByLabel('Mã hoặc tiêu đề')).toHaveValue('');await expect(page.locator('.ticket-table tbody tr').first()).toContainText('mine');
- await page.goto('/staff/team');await expect(page).toHaveURL('/staff/mine');await page.goto('/staff/queue');await expect(page.locator('.ticket-table tbody tr')).toHaveCount(10);
- // Deliberately overlap actual form loads; response for "old" must not overwrite "fresh".
- await page.getByLabel('Mã hoặc tiêu đề').fill('old');const oldResponse=page.waitForResponse(r=>r.url().includes('search=old'));await form.evaluate(e=>(e as HTMLFormElement).requestSubmit());await page.getByLabel('Mã hoặc tiêu đề').fill('fresh');await form.evaluate(e=>(e as HTMLFormElement).requestSubmit());await expect(page.locator('.ticket-table tbody tr').first()).toContainText('fresh');await oldResponse;await expect(page.locator('.ticket-table tbody tr').first()).toContainText('fresh');
- await page.locator('.ticket-table tbody tr').first().getByRole('button',{name:'Tiếp nhận',exact:true}).click();await expect(page.locator('.ticket-table tbody tr')).toHaveCount(9);const accept=calls.find(c=>c.method==='POST'&&c.url.pathname.endsWith('/accept'));expect(accept?.csrf).toBe('ui-fixture-only-csrf');
- setConflict();await page.locator('.ticket-table tbody tr').first().getByRole('button',{name:'Tiếp nhận',exact:true}).click();await expect(page.getByRole('alert')).toHaveText('Phiếu vừa được tiếp nhận. Vui lòng làm mới.');
+for (const theme of ['light','dark']) test(`mine detail and read receipts · ${theme}`, async ({page}) => {
+ await page.addInitScript(mode=>localStorage.setItem('helpdesk-theme',mode),theme);
+ const {calls}=await fixtures(page);
+ const base=ticket(0,'mine');
+ let unread=3;
+ let status='DANG_XU_LY';
+ let statusCalls=0;
+ let acknowledged:string[]=[];
+ await page.route('**/api/v1/staff/tickets?*',async route=>{
+  const query=new URL(route.request().url()).searchParams;
+  calls.push({method:'GET',url:new URL(route.request().url()),body:null,csrf:undefined});
+  const pageNumber=Number(query.get('page'));
+  const items=[{...base,priority_rank:3,unread_customer_messages:unread},
+   {...ticket(1,'mine'),priority_rank:2},{...ticket(2,'mine'),priority_rank:1}];
+  await route.fulfill({json:{items,total:7,page:pageNumber,page_size:5}});
+ });
+ await page.route(/\/api\/v1\/staff\/tickets\/1000(?:\/|$)/,async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith('/read')){
+   acknowledged=route.request().postDataJSON().message_ids;
+   unread=0;
+   return route.fulfill({status:204});
+  }
+  if(path.endsWith('/status')){statusCalls++;status=route.request().postDataJSON().status;}
+  const detail={...base,status,status_label:status==='TAM_DUNG'?'Tạm dừng':'Đang xử lý',
+   can_process:true,customer:{id:'111',name:'Khách hàng'},attachments:[]};
+  if(path.endsWith('/conversation'))return route.fulfill({json:{...detail,
+   can_mark_read:true,can_send:true,can_view_internal:true,can_send_internal:true,events:[],has_older:false,
+   messages:[{id:'11',sender:'Khách hàng',sender_id:'111',content:'Nội dung khách gửi',created_at:base.created_at,from_customer:true,internal:false},
+    {id:'12',sender:'Nhân viên',sender_id:'77',content:'Trao đổi riêng',created_at:base.created_at,internal:true}]}});
+  return route.fulfill({json:detail});
+ });
+ await page.goto('/staff/mine');
+ await expect(page.getByText('3 tin nhắn mới từ Khách hàng')).toBeVisible();
+ const priority=page.locator('td[data-label="Mức độ ưu tiên"] .staff-status-badge');
+ expect(new Set(await priority.evaluateAll(nodes=>nodes.map(node=>getComputedStyle(node).backgroundColor))).size).toBe(3);
+ await page.getByLabel('Mã hoặc tiêu đề').fill('bảo hành');
+ await page.getByRole('button',{name:'Lọc phiếu'}).click();
+ await page.getByRole('combobox',{name:'Sắp xếp theo'}).selectOption('oldest');
+ await expect.poll(()=>calls.at(-1)?.url.searchParams.get('sort')).toBe('oldest');
+ await page.getByRole('button',{name:'Sau',exact:true}).click();
+ await expect.poll(()=>calls.at(-1)?.url.searchParams.get('page')).toBe('2');
+ expect(calls.at(-1)?.url.searchParams.get('search')).toBe('bảo hành');
+ expect(calls.at(-1)?.url.searchParams.get('sort')).toBe('oldest');
+ const link=page.locator('.staff-mine-panel').getByRole('link',{name:/HT-1000/});
+ await link.focus();
+ await link.press('Space');
+ await expect(page).toHaveURL('/staff/tickets/1000');
+ await expect(page.getByText('Nội dung khách gửi')).toBeVisible();
+ await page.getByText('Nội dung khách gửi').scrollIntoViewIfNeeded();
+ await expect.poll(()=>acknowledged).toEqual(['11']);
+ const select=page.locator('.chat-header').getByLabel('Cập nhật trạng thái');
+ await select.selectOption('TAM_DUNG');
+ const dialog=page.getByRole('dialog',{name:'Xác nhận cập nhật trạng thái'});
+ await expect(dialog).toContainText('Đang xử lý → Tạm dừng');
+ expect(statusCalls).toBe(0);
+ await dialog.getByRole('button',{name:'Hủy',exact:true}).click();
+ await expect(select).toHaveValue('');
+ await select.selectOption('TAM_DUNG');
+ await dialog.getByRole('button',{name:'Xác nhận',exact:true}).click();
+ await expect(page.locator('.chat-header')).toContainText('Tạm dừng');
+ expect(statusCalls).toBe(1);
+ await expect(page.getByRole('heading',{name:/Xử lý phiếu|Phân loại và ưu tiên|Chuyển trong nhóm|Lịch sử trạng thái|Lịch sử phân công/})).toHaveCount(0);
+ await expect(page.getByText('Phản hồi đầu',{exact:true})).toHaveCount(0);
+ await expect(page.locator('html')).toHaveAttribute('data-theme',theme);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+ await page.getByRole('navigation',{name:'Đường dẫn điều hướng'}).getByRole('link',{name:'Phiếu của tôi'}).click();
+ await expect(page.locator('.staff-unread-badge')).toHaveCount(0);
+ await page.locator('.staff-mine-panel tbody tr').first().getByText('Bảo hành và bảo trì').click();
+ await expect(page).toHaveURL('/staff/tickets/1000');
+});
+
+test('manager conversation can reply only on the internal tab', async ({page}) => {
+ await fixtures(page,'manager');
+ const base=ticket(0,'mine');
+ const detail={...base,status:'DANG_XU_LY',status_label:'Đang xử lý',assignment_id:'1',
+  customer:{id:'111',name:'Khách hàng'},history:[],assignments:[],attachments:[]};
+ let body:unknown;
+ let assignment:unknown;
+ await page.route('**/api/v1/manager/groups?*',route=>route.fulfill({json:{items:[{id:'2',name:'Bảo hành',active:true}],total:1}}));
+ await page.route('**/api/v1/manager/groups/2/eligible-employees',route=>route.fulfill({json:[]}));
+ await page.route(/\/api\/v1\/manager\/tickets\/1000(?:\/|$)/,async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith('/assignment')){
+   assignment=route.request().postDataJSON();
+   return route.fulfill({json:detail});
+  }
+  if(path.endsWith('/internal-messages')){
+   body=route.request().postDataJSON();
+   return route.fulfill({status:201,json:{id:'15'}});
+  }
+  if(path.endsWith('/conversation'))return route.fulfill({json:{...detail,
+   can_view_internal:true,can_send_internal:true,can_send:false,has_older:false,events:[],
+   messages:body?[{id:'15',sender_id:'77',sender:'Quản lý',content:'Kiểm tra khung ghế',
+    created_at:base.created_at,internal:true}]:[]}});
+  return route.fulfill({json:detail});
+ });
+ await page.goto('/manager/tickets/1000');
+ await expect(page.getByRole('navigation',{name:'Đường dẫn điều hướng'}).getByRole('link',{name:'Giám sát phiếu'})).toHaveAttribute('href','/manager/tickets');
+ await expect(page.getByRole('heading',{name:'Áp SLA có xác nhận'})).toHaveCount(0);
+ await expect(page.locator('.detail-grid > div > section h2')).toHaveText(['Nội dung yêu cầu','Hội thoại hỗ trợ']);
+ await expect(page.getByText('Chế độ giám sát · Chỉ đọc')).toBeVisible();
+ await expect(page.getByLabel('Nội dung trao đổi')).toHaveCount(0);
+ await page.getByRole('tab',{name:'Trao đổi với Nhân viên'}).click();
+ await page.getByLabel('Nội dung trao đổi').fill('Kiểm tra khung ghế');
+ await page.getByRole('button',{name:'Gửi nội dung'}).click();
+ await expect(page.getByText('Kiểm tra khung ghế',{exact:true})).toBeVisible();
+ expect(body).toEqual({content:'Kiểm tra khung ghế'});
+ await expect(page.getByRole('button',{name:'Đính kèm tệp công khai'})).toHaveCount(0);
+ await page.getByRole('tab',{name:'Trao đổi với Khách hàng'}).click();
+ await expect(page.getByText('Kiểm tra khung ghế',{exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'Phân công lại',exact:true}).click();
+ const modal=page.getByRole('dialog',{name:'Phân công lại phiếu'});
+ await expect(modal).toContainText('#HT-1000');
+ await modal.getByLabel('Phương án nhận phiếu').selectOption('QUEUE');
+ await modal.getByLabel('Lý do điều phối').fill('Chờ nhóm tiếp nhận');
+ await modal.getByRole('button',{name:'Xác nhận phân công lại'}).click();
+ await expect(modal).toHaveCount(0);
+ expect(assignment).toMatchObject({group_id:'2',employee_id:null,expected_assignment_id:'1',reason:'Chờ nhóm tiếp nhận'});
+});
+
+test('queue response clock crosses 50 percent and zero', async ({page}) => {
+ await fixtures(page);
+ const start = Date.parse('2026-11-02T08:00:00+07:00');
+ await page.clock.install({time: start});
+ await page.clock.pauseAt(start + 1000);
+ await page.route('**/api/v1/staff/tickets?*', route => route.fulfill({json:{
+  items:[
+   {...ticket(0,'queue'),sla_name:'SLA',response_due:new Date(start + 4000).toISOString()},
+   {...ticket(1,'queue'),sla_name:'SLA',response_due:new Date(start + 500).toISOString()},
+   ticket(2,'queue'),
+  ],
+  total:3,page:1,page_size:5,soon:0,overdue:1,server_now:new Date(start + 1000).toISOString(),
+ }}));
+ await page.goto('/staff/queue');
+ const rows = page.locator('.staff-queue-table tbody tr');
+ await expect(rows.nth(0)).toContainText('00:03');
+ await expect(rows.nth(1)).toContainText('Đã quá hạn');
+ await expect(rows.nth(2)).toContainText('Chưa có hạn');
+ await page.clock.runFor(1000);
+ await expect(rows.nth(0)).toContainText('Sắp đến hạn');
+ await expect(rows.nth(0)).toContainText('00:02');
+ await page.clock.runFor(2000);
+ await expect(rows.nth(0)).toContainText('Đã quá hạn');
+ await expect(rows.nth(0)).toContainText('00:00');
+});
+
+for (const theme of ['light','dark']) test(`queue sorting and request review · ${theme}`, async ({page}) => {
+ await page.addInitScript(mode => localStorage.setItem('helpdesk-theme', mode), theme);
+ const {calls}=await fixtures(page);
+ let approved=false;
+ let approval:unknown;
+ const original={...ticket(0,'queue'), customer:{id:'111',name:'Khách thử'}, description:'Sofa bi goy khong dau',attachments:[],history:[],assignments:[]};
+ await page.route(/\/api\/v1\/staff\/tickets\/1000(?:\/|$)/,async route=>{
+   const path=new URL(route.request().url()).pathname;
+   if(path.endsWith('/approve')){
+     approved=true;
+     approval=route.request().postDataJSON();
+   }
+   if(path.endsWith('/conversation')) return route.fulfill({json:{messages:[],attachments:[],events:[],has_older:false}});
+   return route.fulfill({json:{...original,...(approved?{status:'DANG_XU_LY',status_label:'Đang xử lý',title:'Sofa chuẩn hóa'}:{})}});
+ });
+ await page.goto('/staff/recommended');
+ await expect(page).toHaveURL('/staff/queue');
+ await expect(page.locator('.staff-queue-cards')).toContainText('25');
+ await expect(page.locator('.staff-filter-panel')).toHaveCount(0);
+ await page.getByRole('button',{name:'Sau',exact:true}).click();
+ await expect(page.locator('.staff-pagination')).toContainText('Trang 2');
+ await page.getByRole('combobox',{name:'Sắp xếp theo'}).selectOption('due');
+ await expect(page.locator('.staff-pagination')).toContainText('Trang 1');
+ expect(calls.at(-1)?.url.searchParams.get('sort')).toBe('due');
+ await page.locator('.staff-queue-table tbody tr').first().getByText('Bảo hành sản phẩm').click();
+ await expect(page).toHaveURL('/staff/requests/1000');
+ await page.goto('/staff/tickets/1000');
+ await expect(page).toHaveURL('/staff/requests/1000');
+ await expect(page.getByText(original.description,{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Sao chép nội dung'})).toHaveCount(0);
+ await expect(page.getByRole('link',{name:'Quay lại danh sách'})).toHaveCount(0);
+ await expect(page.getByRole('navigation',{name:'Đường dẫn điều hướng'}).getByRole('link')).toHaveAttribute('href','/staff/queue');
+ const status = page.locator('.staff-review-status');
+ await expect(status).toHaveText(/Trạng thái:\s*Mới/);
+ await expect(status).toHaveCSS('display','flex');
+ await expect(page.getByRole('heading',{name:'Không tiếp nhận yêu cầu',exact:true})).toHaveCount(0);
+ const actions = page.locator('.staff-review-actions');
+ const rejectButton = actions.getByRole('button',{name:'Không tiếp nhận',exact:true});
+ const formBox = (await actions.locator('form').boundingBox())!;
+ const buttonBox = (await rejectButton.boundingBox())!;
+ expect(buttonBox.y).toBeGreaterThan(formBox.y + formBox.height);
+ expect(Math.abs(buttonBox.x + buttonBox.width - formBox.x - formBox.width)).toBeLessThan(1);
+ expect(buttonBox.width).toBeLessThan(formBox.width);
+ await rejectButton.click();
+ const reject=page.getByRole('dialog',{name:'Xác nhận không tiếp nhận'});
+ await reject.getByLabel('Lý do không tiếp nhận').fill('  ');
+ await reject.getByRole('button',{name:'Xác nhận không tiếp nhận'}).click();
+ await expect(reject.getByRole('alert')).toContainText('Vui lòng nhập lý do');
+ await reject.getByRole('button',{name:'Hủy',exact:true}).click();
+ await page.getByLabel('Tiêu đề phiếu hỗ trợ').fill('Bản nháp');
+ await page.getByRole('button',{name:'Dùng thông tin khách gửi'}).click();
+ await page.getByRole('button',{name:'Thay nội dung'}).click();
+ await expect(page.getByLabel('Tiêu đề phiếu hỗ trợ')).toHaveValue(original.title);
+ const submit=page.getByRole('button',{name:'Lập phiếu hỗ trợ',exact:true});
+ await submit.click();
+ await expect(page.getByRole('alert')).toContainText('Chọn mức ưu tiên');
+ expect(approval).toBeUndefined();
+ await page.getByRole('combobox',{name:'Mức độ ưu tiên'}).selectOption('2');
+ await page.getByLabel('Tiêu đề phiếu hỗ trợ').fill('Sofa chuẩn hóa');
+ await submit.click();
+ await expect(page).toHaveURL('/staff/tickets/1000');
+ await expect(page.getByRole('status').filter({hasText:'Đã lập phiếu hỗ trợ thành công'})).toBeVisible();
+ expect(approval).toMatchObject({title:'Sofa chuẩn hóa',priority_id:'2',expected_updated_at:original.updated_at});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+ await page.goto('/staff/team');
+ await expect(page).toHaveURL('/staff/mine');
+ await expect(page.getByRole('button',{name:'Lọc phiếu',exact:true})).toBeVisible();
 });
 
 for(const role of ['customer','manager'] as const)test(`${role}: staff styles do not recolor other dashboards`,async({page},info)=>{
@@ -110,7 +321,6 @@ for(const total of [0,6,12])test(`mine pagination: ${total} tickets, backend pag
   const last=calls.filter(c=>c.url.pathname==='/api/v1/staff/tickets').at(-1)!.url.searchParams;expect(last.get('page_size')).toBe('5');expect(last.get('search')).toBe('Sofa');expect(last.get('page')).toBe('2');
   await previous.click();await expect(page.locator('.staff-pagination')).toContainText('Trang 1');
  }
- await page.goto('/staff/queue');await expect(page.locator('.ticket-table tbody tr')).toHaveCount(10);expect(calls.filter(c=>c.url.searchParams.get('scope')==='queue').every(c=>!c.url.searchParams.has('page_size'))).toBeTruthy();
 });
 
 test('mine footer recomputes total, pages and range from filtered API response',async({page})=>{
@@ -207,9 +417,9 @@ test('customer overview and history use server pages, preserve filters and keep 
   });
   await page.goto('/customer');
   const sidebar = page.getByRole('navigation', { name: 'Không gian Khách hàng' });
-  await expect(sidebar.getByRole('link')).toHaveText(['Tổng quan', 'Tạo phiếu hỗ trợ', 'Lịch sử yêu cầu', 'Thông tin cá nhân']);
+  await expect(sidebar.getByRole('link')).toHaveText(['Tổng quan', 'Tạo phiếu yêu cầu', 'Lịch sử yêu cầu']);
   await expect(page.locator('.ticket-table tbody tr')).toHaveCount(5);
-  await expect(page.getByText('Thông tin tài khoản')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Thông tin cá nhân của / })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Chuyển trang danh sách phiếu' })).toHaveCount(0);
   expect(calls.at(-1)?.get('page_size')).toBe('5');
   await page.getByRole('link', { name: /Xem tất cả/ }).click();
@@ -263,14 +473,14 @@ test('customer overview and history use server pages, preserve filters and keep 
   await expect(pagination).toContainText('Hiển thị 0 trên tổng 0 phiếu');
   await expect(pagination.getByRole('button', { name: 'Sau' })).toBeDisabled();
 
-  await sidebar.getByRole('link', { name: 'Tạo phiếu hỗ trợ' }).click();
-  await expect(sidebar.locator('[aria-current=page]')).toHaveText('Tạo phiếu hỗ trợ');
+  await sidebar.getByRole('link', { name: 'Tạo phiếu yêu cầu' }).click();
+  await expect(sidebar.locator('[aria-current=page]')).toHaveText('Tạo phiếu yêu cầu');
   await page.getByLabel('Tiêu đề', { exact: true }).fill('Kiểm tra điều hướng');
   await page.getByLabel('Loại hỗ trợ').selectOption('6');
   await page.getByLabel('Mô tả chi tiết').fill('Nội dung thử bằng fixture');
   await page.getByRole('button', { name: 'Gửi yêu cầu hỗ trợ' }).click();
-  await expect(page).toHaveURL(/\/customer\/tickets\/1000$/);
-  await page.getByRole('link', { name: '← Lịch sử yêu cầu' }).click();
+  await page.getByRole('dialog', { name: 'Đã gửi yêu cầu hỗ trợ thành công!' })
+    .getByRole('button', { name: 'Xem lịch sử yêu cầu' }).click();
   await expect(page.getByRole('heading', { name: 'Lịch sử yêu cầu' })).toBeVisible();
   await page.getByRole('button', { name: 'Mở trợ lý AI Helpdesk' }).click();
   await page.getByRole('link', { name: 'Xem chi tiết phiếu' }).click();
@@ -367,6 +577,10 @@ test('manager account and group pagination, filters and stale status confirmatio
   await rows.getByRole('button', { name: /^Khóa tài khoản/ }).click();
   const dialog = page.getByRole('dialog');
   const confirm = dialog.getByRole('button', { name: 'Xác nhận khóa' });
+  await dialog.getByLabel('Lý do khóa tài khoản').fill('  ');
+  await confirm.click();
+  await expect(dialog.getByRole('alert')).toHaveText('Vui lòng nhập lý do khóa tài khoản.');
+  await dialog.getByLabel('Lý do khóa tài khoản').fill('Kiểm tra thông tin');
   await confirm.click();
   await expect(dialog.getByRole('alert')).toHaveText('Dữ liệu đã thay đổi.');
   await expect(dialog.getByText('Tài khoản 6 đã đổi tên', { exact: true })).toBeVisible();
@@ -375,8 +589,8 @@ test('manager account and group pagination, filters and stale status confirmatio
   await expect(pagination).toContainText('Hiển thị 1–5 trên tổng 5 tài khoản');
   await expect(previous).toBeDisabled();
   expect(patches).toEqual([
-    { name: 'Tài khoản 6', phone: null, status: 'KHOA', expected_updated_at: version },
-    { name: 'Tài khoản 6 đã đổi tên', phone: null, status: 'KHOA', expected_updated_at: accounts[5].updated_at },
+    { name: 'Tài khoản 6', phone: null, status: 'KHOA', expected_updated_at: version, lock_reason: 'Kiểm tra thông tin' },
+    { name: 'Tài khoản 6 đã đổi tên', phone: null, status: 'KHOA', expected_updated_at: accounts[5].updated_at, lock_reason: 'Kiểm tra thông tin' },
   ]);
   await page.getByLabel('Tên, email hoặc ID').fill('Không có kết quả');
   await page.getByRole('button', { name: 'Lọc tài khoản' }).click();
@@ -393,9 +607,43 @@ test('manager account and group pagination, filters and stale status confirmatio
   await expect(groupPages).toContainText('Hiển thị 21–21 trên tổng 21 nhóm');
 });
 
+test('manager resolves duplicate group membership with explicit confirmation', async ({ page }) => {
+  await fixtures(page,'manager');
+  const groups=[{id:'1',name:'Nhóm A',active:true,members:1,pending:2},
+    {id:'2',name:'Nhóm B',active:true,members:1,pending:0}];
+  let payload:unknown;
+  await page.route('**/api/v1/manager/groups?*',route=>route.fulfill({json:{items:groups,total:2,page:1,page_size:20}}));
+  await page.route('**/api/v1/manager/groups/1',route=>route.fulfill({json:{...groups[0],types:[],
+    people:[{id:'77',name:'Nhân viên thử',status:'HOAT_DONG',workload:2,memberships:payload?[groups[0]]:groups}],
+  }}));
+  await page.route('**/api/v1/manager/groups/1/members/move',async route=>{
+    payload=route.request().postDataJSON();
+    await route.fulfill({json:{message:'Đã cập nhật nhóm duy nhất của nhân viên.'}});
+  });
+  await page.goto('/manager/groups');
+  await page.getByRole('row').filter({hasText:'Nhóm A'}).getByRole('button',{name:/Chỉnh sửa/}).click();
+  await expect(page.getByText('Đang thuộc 2 nhóm')).toBeVisible();
+  await page.getByRole('button',{name:'Chuyển nhóm',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Chuyển nhóm nhân viên'});
+  await dialog.getByLabel('Nhóm duy nhất sau khi cập nhật').selectOption('2');
+  await expect(dialog.getByRole('alert')).toContainText('Hãy điều phối');
+  await expect(dialog.getByRole('button',{name:'Xác nhận chuyển nhóm'})).toBeDisabled();
+  await dialog.getByLabel('Nhóm duy nhất sau khi cập nhật').selectOption('1');
+  await expect(dialog).toContainText('Bỏ liên kết với Nhóm B');
+  await dialog.getByRole('button',{name:'Xác nhận chuyển nhóm'}).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByText('Đã cập nhật nhóm duy nhất của nhân viên.')).toBeVisible();
+  expect(payload).toEqual({employee_id:'77',expected_groups:['1','2']});
+});
+
 test('manager monitoring retains advanced filters and paginates five tickets', async ({ page }, testInfo) => {
   await fixtures(page, 'manager');
   const calls: URLSearchParams[] = [];
+  const detail={...ticket(0,'mine'),customer:{id:'111',name:'Khách'},history:[],assignments:[]};
+  await page.route('**/api/v1/manager/tickets/1000',route=>route.fulfill({json:detail}));
+  await page.route('**/api/v1/manager/tickets/1000/conversation',route=>route.fulfill({json:{
+    ...detail,messages:[],events:[],attachments:[],has_older:false,
+  }}));
   await page.route(/\/api\/v1\/manager\/(catalog\/(types|priorities|statuses)|groups\?|tickets\?)/, async route => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/types')) return route.fulfill({ json: [{ id: '6', name: 'Bảo hành' }] });
@@ -408,8 +656,9 @@ test('manager monitoring retains advanced filters and paginates five tickets', a
     const size = Number(query.get('page_size'));
     const total = query.get('search') === 'rỗng' ? 0 : query.has('priority') ? 6 : 12;
     const count = Math.max(0, Math.min(size, total - (current - 1) * size));
-    return route.fulfill({ json: { items: Array.from({ length: count }, (_, i) =>
-      ticket(i + (current - 1) * size, 'mine')), total, page: current, page_size: size } });
+    return route.fulfill({ json: { items: Array.from({ length: count }, (_, i) => ({
+      ...ticket(i + (current - 1) * size, 'mine'), priority_rank: i % 3 + 1,
+    })), total, page: current, page_size: size } });
   });
 
   await page.goto('/manager/tickets');
@@ -422,6 +671,9 @@ test('manager monitoring retains advanced filters and paginates five tickets', a
   const search = page.getByLabel('Mã hoặc tiêu đề phiếu');
   await expect(priority).toBeHidden();
   await expect(rows).toHaveCount(5);
+  await expect(panel.locator('thead th')).toHaveText(['Mã phiếu','Tiêu đề phiếu','Nhóm / Loại hỗ trợ','Trạng thái phiếu','Mức ưu tiên']);
+  expect(new Set(await panel.locator('td[data-label="Mức ưu tiên"] .staff-status-badge')
+    .evaluateAll(badges=>badges.map(badge=>getComputedStyle(badge).backgroundColor))).size).toBe(3);
   await expect(panel.locator('.staff-status-moi')).toHaveText('Mới');
   await expect(panel.locator('.staff-status-dang_xu_ly')).toHaveText('Đang xử lý');
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
@@ -436,14 +688,16 @@ test('manager monitoring retains advanced filters and paginates five tickets', a
 
   await advanced.click();
   await priority.selectOption('2');
+  await page.getByLabel('Tình trạng SLA').selectOption('overdue');
   await advanced.click();
   await expect(priority).toBeHidden();
   await page.getByRole('button', { name: 'Lọc dữ liệu' }).click();
-  await expect(advanced).toContainText('1 đang áp dụng');
+  await expect(advanced).toContainText('2 đang áp dụng');
   await expect(pagination).toContainText('Hiển thị 1–5 trên tổng 6 phiếu');
   await next.click();
   await expect(rows).toHaveCount(1);
   await expect(pagination).toContainText('Hiển thị 6–6 trên tổng 6 phiếu');
+  expect(calls.at(-1)?.get('sla_state')).toBe('overdue');
   await advanced.click();
   await expect(priority).toHaveValue('2');
   await search.fill('chưa áp dụng');
@@ -452,11 +706,11 @@ test('manager monitoring retains advanced filters and paginates five tickets', a
   await refresh.click();
   await reload;
   await expect(pagination).toContainText('Trang 2 / 2');
-  expect(Object.fromEntries(calls.at(-1)!)).toEqual({ page: '2', page_size: '5', priority: '2' });
+  expect(Object.fromEntries(calls.at(-1)!)).toEqual({ page: '2', page_size: '5', priority: '2', sla_state: 'overdue' });
 
   for (const theme of ['dark', 'light']) {
     await page.getByRole('combobox', { name: 'Giao diện' }).selectOption(theme);
-    await expect(panel.locator('.staff-status-da_huy')).toHaveText('Đã hủy');
+    await expect(panel.locator('td[data-label="Trạng thái phiếu"] .staff-status-da_huy')).toHaveText('Đã hủy');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   }
   await search.fill('rỗng');
@@ -465,6 +719,15 @@ test('manager monitoring retains advanced filters and paginates five tickets', a
   await expect(next).toBeDisabled();
   await page.getByRole('button', { name: 'Xóa lọc' }).click();
   await expect(pagination).toContainText('Hiển thị 1–5 trên tổng 12 phiếu');
+  const firstRow=rows.first();
+  const code=firstRow.getByRole('link',{name:/HT-1000/});
+  await code.focus();
+  await expect(firstRow).toHaveCSS('outline-style','solid');
+  await code.press('Space');
+  await expect(page).toHaveURL('/manager/tickets/1000');
+  await page.getByRole('navigation',{name:'Đường dẫn điều hướng'}).getByRole('link',{name:'Giám sát phiếu'}).click();
+  await page.locator('.manager-monitor-table tbody tr').first().locator('td').nth(1).click();
+  await expect(page).toHaveURL('/manager/tickets/1000');
 });
 
 test('manager SLA table paginates and referenced policies allow only activation changes', async ({ page }) => {
@@ -574,4 +837,178 @@ test('manager report activity pages keep the applied date and scope', async ({ p
   await page.getByRole('button', { name: 'Đặt lại', exact: true }).click();
   await expect(history.locator('tbody tr')).toHaveCount(10);
   expect(requests.at(-1)?.get('group')).toBeNull();
+});
+
+test('customer profile dialog refreshes identity and new ticket stays centered', async ({ page }) => {
+  await fixtures(page, 'customer');
+  const profile = { name: 'Khách hàng thử', email: 'customer@example.invalid', phone: '', gender: '' };
+  let releaseSave!: () => void;
+  const saveGate = new Promise<void>(resolve => { releaseSave = resolve; });
+  await page.route('**/api/v1/auth/me', route => route.fulfill({ json: {
+    user: { id: '77', name: profile.name, email: profile.email, role: 'customer', role_label: 'Khách hàng' },
+  } }));
+  await page.route('**/api/v1/customer/profile', async route => {
+    if (route.request().method() === 'PATCH') {
+      await saveGate;
+      Object.assign(profile, route.request().postDataJSON());
+    }
+    await route.fulfill({ json: profile });
+  });
+  await page.route('**/api/v1/customer/ticket-types', route => route.fulfill({ json: [{ id: '6', name: 'Bảo hành' }] }));
+  await page.route('**/api/v1/customer/attachment-policy', route => route.fulfill({ json: { max_bytes: 1024, extensions: ['.png'] } }));
+
+  await page.goto('/customer/profile');
+  await expect(page).toHaveURL('/customer');
+  const dialog = page.getByRole('dialog', { name: 'Thông tin cá nhân' });
+  const identity = page.getByRole('button', { name: /^Thông tin cá nhân của/ });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(identity).toBeFocused();
+  for (const theme of ['light', 'dark']) {
+    await page.getByRole('combobox', { name: 'Giao diện' }).selectOption(theme);
+    await identity.click();
+    await expect(dialog.getByLabel('Email', { exact: true })).toHaveAttribute('readonly', '');
+    expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    await dialog.getByRole('button', { name: theme === 'light' ? 'Đóng' : 'Hủy', exact: true }).click();
+    await expect(identity).toBeFocused();
+  }
+
+  await identity.click();
+  await dialog.getByLabel('Họ và tên', { exact: true }).fill('Khách đã cập nhật');
+  await dialog.getByLabel('Số điện thoại (không bắt buộc)').fill('123');
+  await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Số điện thoại không hợp lệ');
+  await dialog.getByLabel('Số điện thoại (không bắt buộc)').fill('0912345678');
+  await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
+  try {
+    await expect(dialog.getByRole('button', { name: 'Đang lưu…' })).toBeDisabled();
+    await expect(dialog.getByRole('button', { name: 'Đóng' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+  } finally {
+    releaseSave();
+  }
+  await expect(dialog.getByRole('status')).toHaveText('Đã cập nhật hồ sơ.');
+  await dialog.getByRole('button', { name: 'Đóng' }).click();
+  await expect(identity).toHaveText(/Khách đã cập nhật/);
+  await page.getByRole('navigation', { name: 'Không gian Khách hàng' })
+    .getByRole('link', { name: 'Tạo phiếu yêu cầu' }).click();
+  const layout = page.locator('.customer-new-ticket-page');
+  await expect(layout.getByRole('heading', { name: 'Tạo phiếu yêu cầu' })).toBeVisible();
+  const box = (await layout.boundingBox())!;
+  const parent = (await page.locator('.dashboard-main > .container').boundingBox())!;
+  expect(box.width).toBeLessThanOrEqual(860);
+  expect(Math.abs(box.x + box.width / 2 - parent.x - parent.width / 2)).toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+});
+
+test('customer request receipt, edit, cancel and direct summaries', async ({ page }) => {
+  await fixtures(page, 'customer');
+  const request = {
+    ...ticket(0, 'customer'), can_modify: true, end_reason: null as string | null, closed_by_customer: false,
+    assigned_to: null, messages: [], attachments: [], history: [],
+    rating: null as { stars: number; comment: string | null; created_at: string } | null,
+  };
+  let posts = 0;
+  let stale = false;
+  await page.route(/\/api\/v1\/customer\/(tickets|ticket-types|ticket-statuses|attachment-policy)/, async route => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname.replace('/api/v1/customer', '');
+    if (path === '/ticket-types') return route.fulfill({ json: [{ id: request.type_id, name: request.type_name }] });
+    if (path === '/ticket-statuses') return route.fulfill({ json: [] });
+    if (path === '/attachment-policy') return route.fulfill({ json: { max_bytes: 1024, extensions: ['.txt'] } });
+    if (path === '/tickets' && req.method() === 'POST') {
+      posts++;
+      Object.assign(request, req.postDataJSON());
+      return route.fulfill({ status: 201, json: request });
+    }
+    if (path === '/tickets') return route.fulfill({ json: { items: [request], total: 1, page: 1, page_size: 5 } });
+    if (path.endsWith('/attachments')) return route.fulfill({ status: 415, json: { detail: 'Tệp không hợp lệ.' } });
+    if (path.endsWith('/cancel')) {
+      Object.assign(request, { status: 'DA_HUY', status_label: 'Đã hủy', can_modify: false, end_reason: req.postDataJSON().reason });
+      return route.fulfill({ json: request });
+    }
+    if (path.endsWith('/rating')) {
+      request.rating = { ...req.postDataJSON(), created_at: request.created_at };
+      return route.fulfill({ status: 201, json: request.rating });
+    }
+    if (path.endsWith('/conversation')) return route.fulfill({ json: { messages: [], attachments: [], events: [], has_older: false } });
+    if (req.method() === 'PATCH') {
+      if (stale) {
+        Object.assign(request, { status: 'DANG_XU_LY', status_label: 'Đang xử lý', can_modify: false });
+        return route.fulfill({ status: 409, json: { detail: 'Yêu cầu đã được tiếp nhận.' } });
+      }
+      Object.assign(request, req.postDataJSON());
+    }
+    return route.fulfill({ json: request });
+  });
+  await page.goto('/customer/tickets/new');
+  await page.getByLabel('Tiêu đề', { exact: true }).fill('Yêu cầu mới');
+  await page.getByRole('combobox', { name: 'Loại hỗ trợ' }).selectOption(request.type_id);
+  await page.getByLabel('Mô tả chi tiết').fill('Nội dung thử');
+  await page.getByLabel('Tệp đính kèm (không bắt buộc)').setInputFiles({ name: 'fixture.txt', mimeType: 'text/plain', buffer: Buffer.from('fixture') });
+  await page.getByRole('button', { name: 'Gửi yêu cầu hỗ trợ' }).click();
+  const receipt = page.getByRole('dialog', { name: 'Đã gửi yêu cầu hỗ trợ thành công!' });
+  await expect(receipt.getByRole('alert')).toContainText('tệp chưa tải lên');
+  await receipt.getByRole('button', { name: 'Xem lịch sử yêu cầu' }).click();
+  await expect(page).toHaveURL('/customer/tickets');
+  expect(posts).toBe(1);
+
+  const row = page.getByRole('row').filter({ hasText: 'Yêu cầu mới' });
+  await page.getByRole('combobox', { name: 'Giao diện' }).selectOption('dark');
+  await row.hover();
+  await expect(row).toHaveCSS('cursor', 'pointer');
+  await row.getByText(request.type_name).click();
+  const summary = page.getByRole('dialog', { name: 'Chi tiết yêu cầu' });
+  await expect(summary.getByText('Nội dung thử')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hội thoại hỗ trợ' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await row.getByRole('link').click();
+  await summary.getByRole('button', { name: 'Chỉnh sửa' }).click();
+  const edit = page.getByRole('dialog', { name: 'Chỉnh sửa yêu cầu' });
+  await edit.getByLabel('Tiêu đề', { exact: true }).fill('Yêu cầu đã sửa');
+  await edit.getByRole('button', { name: 'Lưu thay đổi' }).click();
+  await expect(summary.getByText(/Yêu cầu đã sửa/)).toBeVisible();
+  await page.keyboard.press('Escape');
+  const updated = page.getByRole('row').filter({ hasText: 'Yêu cầu đã sửa' });
+  await updated.getByRole('link').click();
+  await summary.getByRole('button', { name: 'Hủy yêu cầu' }).click();
+  const cancel = page.getByRole('dialog', { name: 'Xác nhận hủy yêu cầu' });
+  await cancel.getByLabel('Lý do hủy yêu cầu').fill('  ');
+  await cancel.getByRole('button', { name: 'Xác nhận hủy yêu cầu' }).click();
+  await expect(cancel.getByRole('alert')).toContainText('Vui lòng nhập lý do');
+  await cancel.getByLabel('Lý do hủy yêu cầu').fill('Đã tự khắc phục');
+  await cancel.getByRole('button', { name: 'Xác nhận hủy yêu cầu' }).click();
+  await expect(updated.getByText('Lý do: Đã tự khắc phục')).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Thao tác' })).toHaveCount(0);
+
+  await page.goto('/customer/tickets/1000');
+  await expect(summary.getByText(/Lý do hủy:.*Đã tự khắc phục/)).toBeVisible();
+  await expect(summary.getByRole('button', { name: 'Hủy yêu cầu' })).toBeDisabled();
+  await expect(page.getByRole('heading', { name: 'Hội thoại hỗ trợ' })).toHaveCount(0);
+  Object.assign(request, { status: 'DA_DONG', status_label: 'Đã đóng', end_reason: null, closed_by_customer: true });
+  await page.reload();
+  await summary.getByRole('radio', { name: '5 ★' }).check();
+  await summary.getByRole('button', { name: 'Gửi đánh giá' }).click();
+  await expect(summary.getByText('5/5 sao')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  Object.assign(request, { status: 'MOI', status_label: 'Mới', can_modify: true });
+  stale = true;
+  await page.reload();
+  await updated.getByRole('link').click();
+  await summary.getByRole('button', { name: 'Chỉnh sửa' }).click();
+  await edit.getByRole('button', { name: 'Lưu thay đổi' }).click();
+  await expect(summary.getByRole('alert')).toContainText('đã được tiếp nhận');
+  await expect(summary.getByRole('button', { name: 'Chỉnh sửa' })).toBeDisabled();
+  await summary.getByRole('link', { name: 'Mở chi tiết và hội thoại' }).click();
+  await expect(page.getByRole('heading', { name: 'Hội thoại hỗ trợ' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Giao diện' }).selectOption('light');
+  for (const [status, label] of [['TAM_DUNG', 'Tạm dừng'], ['DA_GIAI_QUYET', 'Đã giải quyết']]) {
+    Object.assign(request, { status, status_label: label });
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Hội thoại hỗ trợ' })).toBeVisible();
+    await expect(summary).toHaveCount(0);
+  }
 });

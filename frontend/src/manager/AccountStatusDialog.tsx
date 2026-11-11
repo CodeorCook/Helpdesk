@@ -14,6 +14,7 @@ export function AccountStatusDialog({ account, close, refresh, saved }: {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [stale, setStale] = useState(false);
+  const [reason, setReason] = useState('');
   const submitting = useRef(false);
   const locking = account.status === 'HOAT_DONG';
   const action = locking ? 'khóa' : 'mở khóa';
@@ -21,6 +22,10 @@ export function AccountStatusDialog({ account, close, refresh, saved }: {
 
   async function confirm() {
     if (submitting.current || stale || alreadyChanged) return;
+    if (locking && !reason.trim()) {
+      setError('Vui lòng nhập lý do khóa tài khoản.');
+      return;
+    }
     submitting.current = true;
     setBusy(true);
     setError('');
@@ -32,6 +37,7 @@ export function AccountStatusDialog({ account, close, refresh, saved }: {
           phone: current.phone,
           status: locking ? 'KHOA' : 'HOAT_DONG',
           expected_updated_at: current.updated_at,
+          ...(locking ? { lock_reason: reason.trim() } : {}),
         }),
       });
       saved(`Đã ${action} tài khoản ${current.name}.`);
@@ -61,6 +67,11 @@ export function AccountStatusDialog({ account, close, refresh, saved }: {
       <dt>Vai trò</dt><dd>{current.role_label}</dd>
       <dt>Trạng thái hiện tại</dt><dd><ManagerStatus active={current.status === 'HOAT_DONG'}/></dd>
     </dl>
+    {locking && <label className="field">Lý do khóa tài khoản
+      <textarea required rows={3} maxLength={500} value={reason} disabled={busy}
+        onChange={event => setReason(event.target.value)} aria-describedby="account-lock-reason-help"/>
+      <small id="account-lock-reason-help">Lý do này sẽ hiện cho người dùng sau khi họ nhập đúng mật khẩu.</small>
+    </label>}
     {error && <p role="alert" className="error-box">{error}</p>}
     {alreadyChanged && <p>Trạng thái đã thay đổi. Hãy đóng hộp thoại để xem danh sách mới nhất.</p>}
     {stale && <p>Chưa tải được thông tin mới. Hãy đóng hộp thoại và thử lại từ danh sách.</p>}

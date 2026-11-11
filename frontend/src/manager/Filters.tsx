@@ -5,7 +5,7 @@ import type { Catalog } from '../customer/api';
 import { managerApi } from './api';
 import { allGroups, type Group } from './Groups';
 
-const advancedKeys = ['priority', 'employee', 'from', 'to', 'scope', 'customer_status'];
+const advancedKeys = ['priority', 'employee', 'from', 'to', 'scope', 'customer_status', 'sla_state'];
 
 function CatalogSelect({ name, label, items }: { name: string; label: string; items: Catalog[] }) {
   return <label className="field">{label}
@@ -81,6 +81,13 @@ export function ManagerFilters({ onFilter, monitoring }: {
         <label className="field">Trạng thái khách hàng
           <select name="customer_status"><option value="">Tất cả</option><option value="HOAT_DONG">Hoạt động</option><option value="KHOA">Đã khóa</option></select>
         </label>
+        {monitoring && <label className="field">Tình trạng SLA
+          <select name="sla_state"><option value="">Tất cả</option>
+            <option value="within">Trong hạn</option><option value="soon">Sắp đến hạn</option>
+            <option value="overdue">Quá hạn</option><option value="ended">Đã kết thúc theo dõi</option>
+            <option value="none">Chưa có SLA</option>
+          </select>
+        </label>}
       </div>
       {monitoring ? <div className="manager-monitor-actions">
         <Button type="button" className="secondary" aria-expanded={expanded} aria-controls={advancedId}

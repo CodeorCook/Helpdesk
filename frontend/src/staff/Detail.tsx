@@ -1,8 +1,151 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { Conversation } from '../chat/Conversation';
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
 import { Button } from '../components';
-import { formatDate, type Catalog } from '../customer/api';
+import { RequestDialog } from '../customer/RequestDialog';
+import { formatDate } from '../customer/api';
 import { staffApi, type StaffTicket } from './api';
-type Detail=StaffTicket&{customer:{id:string;name:string};messages:{id:string;sender:string;content:string;internal:boolean;created_at:string}[];messages_truncated:boolean;attachments:{id:string;name:string;size:number}[];history:{current:string;created_at:string}[];assignments:{id:string;employee:string;started_at:string;ended_at:string|null}[];assignment_id:string|null;can_process:boolean;routing_warning:string|null};
-export function StaffDetail(){const {id}=useParams();const [data,setData]=useState<Detail>();const [types,setTypes]=useState<Catalog[]>([]);const [priorities,setPriorities]=useState<Catalog[]>([]);const [recipients,setRecipients]=useState<{id:string;name:string;workload:number}[]>([]);const [error,setError]=useState('');const [notice,setNotice]=useState('');const [busy,setBusy]=useState(false);async function load(){try{const d=await staffApi<Detail>(`/tickets/${id}`);setData(d);if(d.can_process)setRecipients(await staffApi(`/tickets/${id}/recipients`));else setRecipients([])}catch(e){setData(undefined);setError((e as Error).message)}}useEffect(()=>{void load();void Promise.all([staffApi<Catalog[]>('/ticket-types'),staffApi<Catalog[]>('/priorities')]).then(([a,b])=>{setTypes(a);setPriorities(b)}).catch(e=>setError(e.message))},[id]);async function mutate(path:string,body?:unknown,method='POST'){setBusy(true);setError('');setNotice('');try{await staffApi(`/tickets/${id}/${path}`,{method,body:body===undefined?undefined:JSON.stringify(body)});setNotice('Đã cập nhật phiếu.');await load();return true}catch(e){setError((e as Error).message);await load();return false}finally{setBusy(false)}}return <><Link to="/staff/mine" className="text-link">← Phiếu của tôi</Link><Button className="secondary refresh-button" disabled={busy} onClick={()=>void load()}>Làm mới phiếu</Button>{error&&<p role="alert" className="error-box">{error}</p>}{notice&&<p role="status" className="success-box">{notice}</p>}{!data&&!error&&<p role="status">Đang tải phiếu…</p>}{data&&<><div className="page-heading"><div><span className="eyebrow">PHIẾU #HT-{data.id}</span><h1>{data.title}</h1><p>{data.customer.name} · Khách hàng #{data.customer.id}</p></div><span className="badge">{data.status_label}</span></div>{data.routing_warning&&<p className="confirm-box">{data.routing_warning}</p>}<div className="detail-grid"><div><section className="panel"><h2>Nội dung yêu cầu</h2><p className="preserve-text">{data.description}</p>{data.status==='MOI'&&!data.assigned_id&&<Button disabled={busy} onClick={()=>void mutate('accept')}>{busy?'Đang tiếp nhận…':'Tiếp nhận'}</Button>}</section><Conversation role="staff" ticketId={data.id} revision={`${data.status}:${data.assigned_id}`} reload={load}/>{data.can_process&&<section className="panel"><h2>Xử lý phiếu</h2><form onSubmit={e=>{e.preventDefault();const fd=new FormData(e.currentTarget);void mutate('status',{status:fd.get('status')})}}><label className="field">Trạng thái tiếp theo<select name="status" required defaultValue=""><option disabled value="">Chọn trạng thái</option>{data.status==='DANG_XU_LY'?<option value="TAM_DUNG">Tạm dừng</option>:<option value="DANG_XU_LY">Đang xử lý</option>}<option value="DA_GIAI_QUYET">Đã giải quyết — chờ khách xác nhận đóng</option></select></label><Button disabled={busy}>Cập nhật trạng thái</Button></form><p>Nhân viên giải quyết; khách hàng xác nhận đóng và đánh giá. Không đóng thay khách.</p></section>}</div><aside><section className="panel"><h2>Thông tin phiếu</h2><dl className="detail-meta">{[['Nhóm',data.group_name||'Chưa xác định'],['Phụ trách',data.assigned_to||'Chưa phân công'],['Loại',data.type_name||'Chưa phân loại'],['Ưu tiên',data.priority],['Tạo lúc',formatDate(data.created_at)]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></section><section className="panel"><h2>Theo dõi SLA</h2><span className="badge">{data.sla_state}</span><p>{data.sla_name||'Chưa cấu hình SLA'}</p><dl className="detail-meta">{[['Hạn phản hồi',data.response_due],['Hạn xử lý',data.resolution_due],['Phản hồi đầu',data.first_response_at],['Giải quyết lúc',data.resolved_at]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v?formatDate(v):'Chưa có'}</dd></div>)}</dl><p>Cảnh báo khi tải màn hình; ngưỡng sắp quá hạn là 60 phút. Không có tác vụ nền.</p></section>{data.can_process&&<><section className="panel"><h2>Phân loại và ưu tiên</h2><form key={data.updated_at} onSubmit={e=>{e.preventDefault();const fd=new FormData(e.currentTarget);void mutate('classification',{type_id:fd.get('type_id'),priority_id:fd.get('priority_id')},'PATCH')}}><label className="field">Loại hỗ trợ<select key={`${data.type_id}:${types.length}`} name="type_id" defaultValue={data.type_id||''} required>{data.type_id&&!types.some(t=>t.id===data.type_id)&&<option value={data.type_id} disabled>{data.type_name||'Loại đã ngừng sử dụng'}</option>}{types.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label className="field">Mức ưu tiên<select key={`${data.priority_id}:${priorities.length}`} name="priority_id" defaultValue={data.priority_id} required>{priorities.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label><Button disabled={busy}>Lưu phân loại</Button></form><p>Đổi loại không tự chuyển nhóm, người phụ trách hoặc tính lại SLA.</p></section><section className="panel"><h2>Chuyển trong nhóm</h2>{recipients.length?<form onSubmit={e=>{e.preventDefault();const fd=new FormData(e.currentTarget);if(window.confirm('Xác nhận chuyển phiếu cho nhân viên đã chọn?'))void mutate('transfer',{employee_id:fd.get('employee_id'),assignment_id:data.assignment_id})}}><label className="field">Người tiếp nhận<select name="employee_id" defaultValue="" required><option value="" disabled>Chọn nhân viên</option>{recipients.map(r=><option key={r.id} value={r.id}>{r.name} · {r.workload} phiếu đang xử lý</option>)}</select></label><Button disabled={busy}>Chuyển phiếu</Button></form>:<p>Chưa có nhân viên hoạt động khác trong nhóm.</p>}</section></>}<section className="panel"><h2>Lịch sử trạng thái</h2><ol className="timeline">{data.history.map((h,i)=><li key={i}><strong>{h.current}</strong><small>{formatDate(h.created_at)}</small></li>)}</ol></section><section className="panel"><h2>Lịch sử phân công</h2>{!data.assignments.length&&<p>Chưa có phân công.</p>}<ol className="timeline">{data.assignments.map(h=><li key={h.id}><strong>{h.employee}</strong><small>{formatDate(h.started_at)}</small><small>{h.ended_at?`Kết thúc: ${formatDate(h.ended_at)}`:'Đang hiệu lực'}</small></li>)}</ol></section></aside></div></>}</>}
+
+type Detail = StaffTicket & {
+  customer: { id: string; name: string };
+  can_process: boolean;
+  routing_warning: string | null;
+  request_snapshot?: {
+    title: string; description: string; type_name: string | null; sla_name: string | null;
+    sla_state: string; response_due: string | null; resolution_due: string | null;
+  } | null;
+};
+
+const transitions = {
+  DANG_XU_LY: 'Tiếp tục xử lý',
+  TAM_DUNG: 'Tạm dừng',
+  DA_GIAI_QUYET: 'Đã giải quyết',
+};
+type Transition = keyof typeof transitions;
+
+export function StaffDetail() {
+  const { id } = useParams();
+  return <TicketDetail key={id} id={id!}/>;
+}
+
+function TicketDetail({ id }: { id: string }) {
+  const location = useLocation();
+  const [data, setData] = useState<Detail>();
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [nextStatus, setNextStatus] = useState<Transition | ''>('');
+  const [statusError, setStatusError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
+  const loadVersion = useRef(0);
+
+  const load = useCallback(async () => {
+    const version = ++loadVersion.current;
+    try {
+      const result = await staffApi<Detail>(`/tickets/${id}`);
+      if (version === loadVersion.current) { setData(result); setError(''); }
+    } catch (e) {
+      if (version === loadVersion.current) { setData(undefined); setError((e as Error).message); }
+    }
+  }, [id]);
+  useEffect(() => { void load(); return () => { loadVersion.current++; }; }, [load]);
+
+  async function confirmStatus() {
+    if (!nextStatus || !data?.can_process || inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setStatusError('');
+    setNotice('');
+    try {
+      const updated = await staffApi<StaffTicket>(`/tickets/${id}/status`, {
+        method: 'POST', body: JSON.stringify({ status: nextStatus }),
+      });
+      setData(current => current && ({
+        ...current, ...updated, can_process: updated.status !== 'DA_GIAI_QUYET' && current.can_process,
+      }));
+      setNextStatus('');
+      setNotice('Đã cập nhật trạng thái phiếu.');
+      await load();
+    } catch (e) {
+      setStatusError((e as Error).message);
+      await load();
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  }
+
+  if (data?.status === 'MOI') return <Navigate to={`/staff/requests/${id}`} replace/>;
+  const allowed: Transition[] = data?.can_process && data.status === 'DANG_XU_LY' ? ['TAM_DUNG', 'DA_GIAI_QUYET']
+    : data?.can_process && data.status === 'TAM_DUNG' ? ['DANG_XU_LY', 'DA_GIAI_QUYET'] : [];
+  const snapshot = data?.request_snapshot;
+
+  return <>
+    <nav className="staff-review-breadcrumb staff-detail-breadcrumb" aria-label="Đường dẫn điều hướng">
+      <Link to="/staff/mine" className="text-link">Phiếu của tôi</Link>
+      <ChevronRight size={16} aria-hidden="true"/>
+      <span aria-current="page">Phiếu #HT-{id}</span>
+    </nav>
+    {error && <p role="alert" className="error-box">{error}</p>}
+    {(notice || location.state?.approved) && <p role="status" className="success-box">{notice || 'Đã lập phiếu hỗ trợ thành công.'}</p>}
+    {!data && !error && <p role="status">Đang tải phiếu…</p>}
+    {data && <>
+      <div className="page-heading">
+        <div><h1>{data.title}</h1><p>{data.customer.name} · Khách hàng #{data.customer.id}</p></div>
+        <span className="badge">{data.status_label}</span>
+      </div>
+      {data.routing_warning && <p className="confirm-box">{data.routing_warning}</p>}
+      <div className="detail-grid">
+        <div>
+          <section className="panel">
+            <h2>Nội dung yêu cầu</h2>
+            <p className="preserve-text">{data.description}</p>
+            {snapshot && <details><summary>Nội dung gốc trước khi lập phiếu</summary>
+              <h3 className="preserve-text">{snapshot.title}</h3>
+              <p>{snapshot.type_name || 'Chưa phân loại'}</p>
+              <p className="preserve-text">{snapshot.description}</p>
+              <small>SLA tạm tính: {snapshot.sla_name || 'Chưa cấu hình'} · {snapshot.sla_state}</small>
+              <p>Hạn phản hồi tạm tính: {snapshot.response_due ? formatDate(snapshot.response_due) : 'Chưa có'}</p>
+              <p>Hạn xử lý tạm tính: {snapshot.resolution_due ? formatDate(snapshot.resolution_due) : 'Chưa có'}</p>
+            </details>}
+          </section>
+          <Conversation role="staff" ticketId={data.id} revision={`${data.status}:${data.assigned_id}`} reload={load}
+            headerStatus={data.status_label} headerAction={allowed.length > 0 && <select className="staff-chat-status"
+              aria-label="Cập nhật trạng thái" value="" disabled={busy || !!nextStatus}
+              onChange={event => { setStatusError(''); setNextStatus(event.target.value as Transition); }}>
+              <option value="" disabled>Cập nhật trạng thái</option>
+              {allowed.map(status => <option key={status} value={status}>{transitions[status]}</option>)}
+            </select>}/>
+        </div>
+        <aside>
+          <section className="panel"><h2>Thông tin phiếu</h2><dl className="detail-meta">
+            {[['Nhóm', data.group_name || 'Chưa xác định'], ['Phụ trách', data.assigned_to || 'Chưa phân công'],
+              ['Loại', data.type_name || 'Chưa phân loại'], ['Ưu tiên', data.priority],
+              ['Tạo lúc', formatDate(data.created_at)]].map(([label, value]) =>
+              <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+          </dl></section>
+          <section className="panel"><h2>Theo dõi SLA</h2>
+            <span className="badge">{data.sla_state}</span>
+            {data.sla_name && <><p>{data.sla_name}</p><dl className="detail-meta">
+              {[['Hạn phản hồi', data.response_due], ['Hạn xử lý', data.resolution_due]].map(([label, value]) =>
+                <div key={label}><dt>{label}</dt><dd>{value ? formatDate(value) : 'Chưa có'}</dd></div>)}
+            </dl></>}
+          </section>
+        </aside>
+      </div>
+    </>}
+    {nextStatus && <RequestDialog title="Xác nhận cập nhật trạng thái" busy={busy}
+      close={() => { if (!inFlight.current) setNextStatus(''); }}>
+      <p>Phiếu <strong>#HT-{id}</strong></p>
+      <p><strong>{data?.status_label ?? 'Không xác định'}</strong> → <strong>{transitions[nextStatus]}</strong></p>
+      {statusError && <p role="alert" className="error-box">{statusError}</p>}
+      <div className="actions">
+        <Button className="secondary" disabled={busy} onClick={() => setNextStatus('')}>Hủy</Button>
+        <Button disabled={busy || !allowed.includes(nextStatus)} onClick={() => void confirmStatus()}>
+          {busy ? 'Đang cập nhật…' : 'Xác nhận'}
+        </Button>
+      </div>
+    </RequestDialog>}
+  </>;
+}

@@ -1,60 +1,63 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react';
 import { Button, Input } from '../components';
 import type { Catalog } from '../customer/api';
 import { formatDate } from '../customer/api';
 import { staffApi, type StaffPage } from './api';
 
-type StaffScope = 'queue' | 'mine';
-
-export function StaffTickets({ scope }: { scope: StaffScope }) {
+export function StaffTickets() {
+  const navigate = useNavigate();
   const [data, setData] = useState<StaffPage>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
-  const [types, setTypes] = useState<Catalog[]>([]);
+  const [sort, setSort] = useState('newest');
   const [statuses, setStatuses] = useState<Catalog[]>([]);
   const [priorities, setPriorities] = useState<Catalog[]>([]);
   const requestVersion = useRef(0);
+  const pending = useRef(false);
 
-  async function load() {
+  async function load(background = false) {
+    if (background && (pending.current || document.visibilityState !== 'visible')) return;
     const version = ++requestVersion.current;
-    setBusy('load');
-    setError('');
+    pending.current = true;
+    if (!background) { setBusy('load'); setError(''); }
     try {
-      const result = await staffApi<StaffPage>(`/tickets?scope=${scope}&page=${page}&${scope === 'mine' ? 'page_size=5&' : ''}${query}`);
-      if (version === requestVersion.current) setData(result);
+      const result = await staffApi<StaffPage>(`/tickets?scope=mine&page=${page}&page_size=5&sort=${sort}&${query}`);
+      if (version !== requestVersion.current) return;
+      const lastPage = Math.max(1, Math.ceil(result.total / result.page_size));
+      if (page > lastPage) setPage(lastPage);
+      else setData(result);
     }
-    catch (e) { if (version === requestVersion.current) setError((e as Error).message); }
-    finally { if (version === requestVersion.current) setBusy(''); }
+    catch (e) { if (!background && version === requestVersion.current) setError((e as Error).message); }
+    finally { if (version === requestVersion.current) { pending.current = false; setBusy(''); } }
   }
-  useEffect(() => { void load(); return () => { requestVersion.current++; }; }, [scope, page, query]);
+  useEffect(() => {
+    void load();
+    const refresh = () => void load(true);
+    const timer = window.setInterval(refresh, 30000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      requestVersion.current++;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [page, query, sort]);
   useEffect(() => {
     void Promise.all([
-      staffApi<Catalog[]>('/ticket-types'),
       staffApi<Catalog[]>('/ticket-statuses'),
       staffApi<Catalog[]>('/priorities'),
-    ]).then(([a, b, c]) => { setTypes(a); setStatuses(b); setPriorities(c); }).catch(e => setError(e.message));
+    ]).then(([a, b]) => { setStatuses(a); setPriorities(b); }).catch(e => setError(e.message));
   }, []);
 
-  async function accept(id: string) {
-    setBusy(id);
-    setError('');
-    try { await staffApi(`/tickets/${id}/accept`, { method: 'POST' }); await load(); }
-    catch (e) { await load(); setError((e as Error).message); }
-    finally { setBusy(''); }
-  }
-
-  const isQueue = scope === 'queue';
-  const currentPage = isQueue ? page : (data?.page ?? page);
+  const currentPage = data?.page ?? page;
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
   const firstItem = data && data.total > 0 ? (data.page - 1) * data.page_size + 1 : 0;
   const lastItem = data ? Math.min(data.page * data.page_size, data.total) : 0;
-  const title = isQueue ? 'Yêu cầu chờ tiếp nhận' : 'Phiếu của tôi';
-  const description = isQueue
-    ? 'Tất cả phiếu đang chờ trong nhóm. Phiếu được đề xuất riêng có nhãn “Ưu tiên cho bạn”.'
-    : 'Danh sách phiếu đã được giao cho bạn để theo dõi và xử lý.';
+  const title = 'Phiếu của tôi';
+  const description = 'Danh sách phiếu đã được giao cho bạn để theo dõi và xử lý.';
 
   return (
     <>
@@ -63,7 +66,7 @@ export function StaffTickets({ scope }: { scope: StaffScope }) {
         <Button disabled={!!busy} onClick={() => void load()}>Làm mới</Button>
       </div>
       <form
-        className="panel filter-grid staff-filter-panel"
+        className="panel filter-grid staff-filter-panel staff-mine-filter"
         onSubmit={e => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
@@ -74,9 +77,6 @@ export function StaffTickets({ scope }: { scope: StaffScope }) {
         }}
       >
         <Input id="staff-search" name="search" label="Mã hoặc tiêu đề" maxLength={200} />
-        <label className="field">Loại hỗ trợ
-          <select name="type"><option value="">Tất cả</option>{types.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}</select>
-        </label>
         <label className="field">Trạng thái
           <select name="status"><option value="">Tất cả</option>{statuses.map(i => <option key={i.id} value={i.code!}>{i.name}</option>)}</select>
         </label>
@@ -90,30 +90,40 @@ export function StaffTickets({ scope }: { scope: StaffScope }) {
       {error && <p className="error-box" role="alert">{error}</p>}
       {busy === 'load' && <p role="status">Đang tải phiếu…</p>}
       {data && (
-        <section className={`panel staff-ticket-panel${isQueue ? '' : ' staff-mine-panel'}`} aria-label={title}>
+        <section className="panel staff-ticket-panel staff-mine-panel" aria-label={title}>
+          <div className="staff-mine-toolbar">
+            <h2>Danh sách phiếu được giao</h2>
+            <label>Sắp xếp theo: <select value={sort} onChange={event => {
+              setPage(1); setSort(event.target.value);
+            }}><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option></select></label>
+          </div>
           <div className="table-scroll staff-ticket-scroll">
             <table className="ticket-table">
-              <thead><tr>{['Phiếu', 'Nhóm / Loại', 'Trạng thái', 'SLA', 'Thao tác'].map(x => <th key={x}>{x}</th>)}</tr></thead>
+              <thead><tr>{['Phiếu', 'Nhóm hỗ trợ', 'Trạng thái', 'Mức độ ưu tiên'].map(x => <th key={x}>{x}</th>)}</tr></thead>
               <tbody>
                 {data.items.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} onClick={event => {
+                    if (event.target instanceof Element && !event.target.closest('a') && !window.getSelection()?.toString()) {
+                      navigate(`/staff/tickets/${t.id}`);
+                    }
+                  }}>
                     <td data-label="Phiếu">
-                      <Link className="text-link" to={`/staff/tickets/${t.id}`}>#HT-{t.id} · {t.title}</Link>
+                      <Link className="text-link" to={`/staff/tickets/${t.id}`} onKeyDown={event => {
+                        if (event.key === ' ') { event.preventDefault(); navigate(`/staff/tickets/${t.id}`); }
+                      }}>#HT-{t.id} · {t.title}</Link>
                       <small>{formatDate(t.created_at)}</small>
-                      {t.recommended && <span className="badge staff-recommended-badge">Ưu tiên cho bạn</span>}
+                      {!!t.unread_customer_messages && <span className="staff-unread-badge"><MessageCircle size={15} aria-hidden="true"/>
+                        {t.unread_customer_messages} tin nhắn mới từ Khách hàng</span>}
                     </td>
-                    <td data-label="Nhóm / Loại">{t.group_name}<small>{t.type_name}</small></td>
+                    <td data-label="Nhóm hỗ trợ">{t.group_name || 'Chưa xác định'}</td>
                     <td data-label="Trạng thái">
                       <span className={`staff-status-badge staff-status-${t.status.toLowerCase().replace(/[^a-z0-9_-]/g, '')}`}>
                         {t.status_label}
                       </span>
-                      <small>{t.priority} · {t.assigned_to || 'Chưa phân công'}</small>
                     </td>
-                    <td data-label="SLA">{t.sla_state}</td>
-                    <td data-label="Thao tác">
-                      {t.status === 'MOI' && !t.assigned_id
-                        ? <Button disabled={!!busy} onClick={() => void accept(t.id)}>{busy === t.id ? 'Đang tiếp nhận…' : 'Tiếp nhận'}</Button>
-                        : <Link className="button staff-view-button" to={`/staff/tickets/${t.id}`}>Xem phiếu</Link>}
+                    <td data-label="Mức độ ưu tiên">
+                      <span className={`staff-status-badge ${t.priority_rank === 3 ? 'staff-status-da_huy' :
+                        t.priority_rank === 2 ? 'staff-status-tam_dung' : t.priority_rank === 1 ? 'staff-status-da_giai_quyet' : ''}`}>{t.priority}</span>
                     </td>
                   </tr>
                 ))}
@@ -123,7 +133,7 @@ export function StaffTickets({ scope }: { scope: StaffScope }) {
           </div>
           <div className="staff-pagination" aria-label="Chuyển trang danh sách phiếu">
             <Button className="secondary" disabled={currentPage <= 1 || !!busy} onClick={() => setPage(currentPage - 1)}>Trước</Button>
-            {isQueue ? <span>Trang <strong>{page}</strong> · {data.total} phiếu</span> :
+            {
               <span className="staff-pagination-details" aria-live="polite">
                 <span>Trang <strong>{data.page}</strong> / {totalPages}</span>
                 <small>Hiển thị {firstItem}–{lastItem} trên tổng {data.total} phiếu</small>

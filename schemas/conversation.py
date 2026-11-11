@@ -1,5 +1,11 @@
 from datetime import datetime
-from pydantic import BaseModel
+from typing import Annotated
+from pydantic import BaseModel, Field
+from schemas.customer import StrictInput
+
+
+class ReadCustomerMessages(StrictInput):
+    message_ids: list[Annotated[int, Field(gt=0, le=9223372036854775807)]] = Field(min_length=1, max_length=100)
 
 
 class ChatMessage(BaseModel):
@@ -8,6 +14,7 @@ class ChatMessage(BaseModel):
     sender: str
     content: str
     internal: bool
+    from_customer: bool = False
     created_at: datetime
 
 
@@ -36,6 +43,8 @@ class Conversation(BaseModel):
     group_id: str | None
     can_send: bool
     can_view_internal: bool
+    can_send_internal: bool = False
+    can_mark_read: bool = False
     messages: list[ChatMessage]
     has_older: bool
     has_more: bool

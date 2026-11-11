@@ -4,6 +4,7 @@ import { UserMinus } from 'lucide-react';
 import { Button, Input } from '../components';
 import { ManagerDialog, ManagerStatus } from './Dialog';
 import { MemberDialog } from './MemberDialog';
+import { MembershipDialog } from './MembershipDialog';
 import { managerApi } from './api';
 import { ticketMetrics } from './metrics';
 import type { GroupDetail } from './Groups';
@@ -15,6 +16,7 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [moving, setMoving] = useState<GroupDetail['people'][number]>();
   const [editingTypes, setEditingTypes] = useState(false);
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
   }
 
   return <>
-    <ManagerDialog title={data ? `Chỉnh sửa nhóm · ${data.name}` : 'Chỉnh sửa nhóm hỗ trợ'} onClose={close} busy={busy || adding || editingTypes} wide>
+    <ManagerDialog title={data ? `Chỉnh sửa nhóm · ${data.name}` : 'Chỉnh sửa nhóm hỗ trợ'} onClose={close} busy={busy || adding || editingTypes || !!moving} wide>
       {error && <p role="alert" className="error-box">{error}</p>}
       {notice && <p role="status" className="success-box">{notice}</p>}
       {!data && !error && <p role="status">Đang tải chi tiết nhóm…</p>}
@@ -122,14 +124,19 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
           {data.people.length ? <div className="table-scroll"><table className="ticket-table">
             <thead><tr><th>Nhân viên</th><th>Trạng thái</th><th>Phiếu đang xử lý (mọi nhóm)</th><th>Thao tác</th></tr></thead>
             <tbody>{data.people.map(person => <tr key={person.id}>
-              <td data-label="Nhân viên">{person.name}<small>#{person.id}</small></td>
+              <td data-label="Nhân viên">{person.name}<small>#{person.id}</small>
+                {(person.memberships?.length ?? 0) > 1 && <small>Đang thuộc {person.memberships?.length} nhóm</small>}
+              </td>
               <td data-label="Trạng thái"><ManagerStatus active={person.status === 'HOAT_DONG'}/></td>
               <td data-label="Phiếu đang xử lý">{person.workload}</td>
-              <td data-label="Thao tác"><Button type="button" className="secondary manager-icon-button"
+              <td data-label="Thao tác"><div className="actions">
+                {person.status === 'HOAT_DONG' && !!person.memberships?.length &&
+                  <Button type="button" className="secondary" disabled={busy} onClick={() => setMoving(person)}>Chuyển nhóm</Button>}
+                <Button type="button" className="secondary manager-icon-button"
                 title="Bỏ thành viên" aria-label={`Bỏ thành viên ${person.name}`} disabled={busy}
                 onClick={() => void remove(person.id, person.name)}>
                 <UserMinus size={17} aria-hidden="true"/>
-              </Button></td>
+              </Button></div></td>
             </tr>)}</tbody>
           </table></div> : <p>Chưa có thành viên.</p>}
         </section>
@@ -145,6 +152,11 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
       close={() => setAdding(false)} added={async () => {
         await refreshMembers('Đã cập nhật nhóm. Đã thêm thành viên.');
         setAdding(false);
+      }}/>}
+    {moving?.memberships && <MembershipDialog person={{...moving, memberships: moving.memberships}} currentGroup={id}
+      close={() => setMoving(undefined)} saved={async message => {
+        await refreshMembers(message);
+        setMoving(undefined);
       }}/>}
   </>;
 }

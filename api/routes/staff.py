@@ -1,4 +1,4 @@
-from schemas.conversation import Conversation
+from schemas.conversation import Conversation, ReadCustomerMessages
 from services import conversation_service
 from fastapi import HTTPException
 from datetime import date
@@ -11,7 +11,7 @@ from api.routes.auth import require_role
 from api.routes.customer import mutation_guard
 from schemas.auth import UserResponse
 from schemas.customer import CatalogItem, AttachmentResponse, UploadPolicy
-from schemas.staff import (StaffOverview, StaffPage, StaffTicket, StaffDetail, StaffCreate, Classification,
+from schemas.staff import (StaffOverview, StaffPage, StaffTicket, StaffDetail, StaffCreate, StaffApprove, StaffReject, Classification,
                            Transfer, StatusChange, StaffMessage, Person, Employee, Receipt)
 from services import staff_service as service
 
@@ -46,13 +46,25 @@ def tickets(scope: Literal['queue','mine','recommended','team'] = 'queue', searc
             type_id: int | None = Query(None,alias='type',gt=0,le=9223372036854775807),
             status: str | None = Query(None,max_length=30,pattern='^[A-Z_]+$'), priority: int | None = Query(None,gt=0,le=32767),
             from_date: date | None = Query(None,alias='from',le=date(9998,12,31)), to_date: date | None = Query(None,alias='to',le=date(9998,12,31)),
-            page: int = Query(1,ge=1,le=100000),page_size: int = Query(10,ge=1,le=50), user: UserResponse = Depends(staff)):
-    return service.list_tickets(user.id,scope,search,type_id,status,priority,from_date,to_date,page,page_size)
+            sort: Literal['newest','due','oldest'] | None = None, page: int = Query(1,ge=1,le=100000),page_size: int = Query(10,ge=1,le=50), user: UserResponse = Depends(staff)):
+    if sort == 'oldest' and scope != 'mine':
+        raise HTTPException(422, 'Sắp xếp cũ nhất chỉ áp dụng cho Phiếu của tôi.')
+    return service.list_tickets(user.id,scope,search,type_id,status,priority,from_date,to_date,page,page_size,sort)
 
 
 @router.post('/tickets/{ticket_id}/accept', response_model=StaffTicket, dependencies=[Depends(mutation_guard)])
 def accept(ticket_id: int =ID(), user: UserResponse = Depends(staff)):
-    return service.accept(user.id,ticket_id)
+    raise HTTPException(409, 'Hãy mở yêu cầu, chuẩn hóa nội dung và chọn mức ưu tiên để lập phiếu hỗ trợ.')
+
+
+@router.post('/tickets/{ticket_id}/approve', response_model=StaffTicket, dependencies=[Depends(mutation_guard)])
+def approve(body: StaffApprove, ticket_id: int = ID(), user: UserResponse = Depends(staff)):
+    return service.approve(user.id, ticket_id, body)
+
+
+@router.post('/tickets/{ticket_id}/reject', response_model=StaffTicket, dependencies=[Depends(mutation_guard)])
+def reject(body: StaffReject, ticket_id: int = ID(), user: UserResponse = Depends(staff)):
+    return service.reject(user.id, ticket_id, body)
 
 
 @router.get('/customers', response_model=list[Person])
@@ -94,6 +106,11 @@ def status(body: StatusChange,ticket_id: int =ID(),user: UserResponse = Depends(
 def message(body: StaffMessage,ticket_id: int =ID(),user: UserResponse = Depends(staff)):
     result=service.send_message(user.id,ticket_id,body)
     return {**result,'message':'Đã lưu ghi chú nội bộ.' if body.internal else 'Đã gửi phản hồi công khai.'}
+
+
+@router.post('/tickets/{ticket_id}/conversation/read', status_code=204, dependencies=[Depends(mutation_guard)])
+def mark_read(body: ReadCustomerMessages, ticket_id: int = ID(), user: UserResponse = Depends(staff)):
+    service.mark_customer_messages_read(user.id, ticket_id, body.message_ids)
 
 
 @router.get('/attachment-policy',response_model=UploadPolicy)

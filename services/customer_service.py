@@ -12,8 +12,11 @@ from core.database import ConfigurationError, database_schema, get_connection
 from core.uploads import safe_path, validate_file
 from schemas.customer import TicketCreate
 from core.sla import attach_sla
+from core.coordination import lock_operations
+from core.audit import record
+from services.email_service import enqueue
 
-TABLES = ("nguoi_dung", "khach_hang", "phieu_ho_tro", "loai_ho_tro", "muc_do_uu_tien", "trang_thai", "lich_su_trang_thai", "tin_nhan", "tep_dinh_kem", "danh_gia")
+TABLES = ("nguoi_dung", "khach_hang", "phieu_ho_tro", "loai_ho_tro", "muc_do_uu_tien", "trang_thai", "lich_su_trang_thai", "lich_su_phan_cong", "tin_nhan", "tep_dinh_kem", "danh_gia")
 
 
 def execute(cur, statement, params=()):
@@ -22,10 +25,12 @@ def execute(cur, statement, params=()):
 
 
 @contextmanager
-def customer_cursor(user_id,lock_user=False):
+def customer_cursor(user_id,lock_user=False,coordinate=False):
     with get_connection() as conn:
         with conn.transaction():
             with conn.cursor(row_factory=dict_row) as cur:
+                if coordinate:
+                    lock_operations(cur)
                 execute(cur, "SELECT k.nd_ma FROM {khach_hang} k JOIN {nguoi_dung} n USING(nd_ma) WHERE k.nd_ma=%s AND n.vai_tro='KHACH_HANG' AND n.trang_thai='HOAT_DONG' "+('FOR UPDATE OF n' if lock_user else 'FOR SHARE OF n'), (user_id,))
                 if cur.fetchone() is None:
                     raise HTTPException(409, "Tài khoản thiếu hồ sơ Khách hàng hoặc không còn hoạt động đúng vai trò. Vui lòng làm mới hoặc liên hệ Quản lý.")
@@ -33,8 +38,20 @@ def customer_cursor(user_id,lock_user=False):
 
 
 TICKET_VIEW = """SELECT p.phieu_ma::text AS id,p.tieu_de AS title,p.mo_ta AS description,
-    p.ht_ma::text AS type_id,l.ten AS type_name,t.ma AS status,t.ten AS status_label,u.ten AS priority,
-    p.ngay_tao AS created_at,p.ngay_cap_nhat AS updated_at,p.ngay_dong AS closed_at,n.ho_ten AS assigned_to
+    p.ht_ma::text AS type_id,l.ten AS type_name,t.ma AS status,
+    CASE WHEN to_jsonb(p)->>'ket_thuc_loai'='TU_CHOI_YEU_CAU' THEN 'Đã đóng – Không tiếp nhận' ELSE t.ten END AS status_label,
+    to_jsonb(p)->>'ket_thuc_loai' AS termination_kind,u.ten AS priority,
+    p.ngay_tao AS created_at,p.ngay_cap_nhat AS updated_at,p.ngay_dong AS closed_at,n.ho_ten AS assigned_to,
+    (t.ma='MOI' AND p.nhan_vien_phu_trach_ma IS NULL AND NOT EXISTS(
+        SELECT 1 FROM {lich_su_phan_cong} a WHERE a.phieu_ma=p.phieu_ma)) AS can_modify,
+    CASE WHEN to_jsonb(p)->>'ket_thuc_loai'='TU_CHOI_YEU_CAU' THEN p.ly_do_dong
+        WHEN t.ma='DA_HUY' THEN (SELECT h.ghi_chu FROM {lich_su_trang_thai} h
+        WHERE h.phieu_ma=p.phieu_ma AND h.tt_moi_ma=p.tt_ma AND h.nguoi_thay_doi_ma=p.khach_hang_ma
+        ORDER BY h.thoi_diem DESC,h.ls_ma DESC LIMIT 1)
+        WHEN t.ma='DA_DONG' THEN p.ly_do_dong END AS end_reason,
+    (t.ma='DA_DONG' AND COALESCE((SELECT h.nguoi_thay_doi_ma=p.khach_hang_ma
+        FROM {lich_su_trang_thai} h WHERE h.phieu_ma=p.phieu_ma AND h.tt_moi_ma=p.tt_ma
+        ORDER BY h.thoi_diem DESC,h.ls_ma DESC LIMIT 1),false)) AS closed_by_customer
     FROM {phieu_ho_tro} p JOIN {trang_thai} t ON t.tt_ma=p.tt_ma
     JOIN {muc_do_uu_tien} u ON u.mdut_ma=p.mdut_ma LEFT JOIN {loai_ho_tro} l ON l.ht_ma=p.ht_ma
     LEFT JOIN {nguoi_dung} n ON n.nd_ma=p.nhan_vien_phu_trach_ma """
@@ -85,6 +102,7 @@ def create_ticket_in_transaction(cur, user_id, body: TicketCreate):
     ticket_id = cur.fetchone()["phieu_ma"]
     add_history(cur, ticket_id, None, status["tt_ma"], user_id)
     attach_sla(cur,ticket_id)
+    enqueue(cur, ticket_id, "created")
     return ticket_row(cur, user_id, ticket_id)
 
 
@@ -162,6 +180,44 @@ def locked_ticket(cur, user_id, ticket_id):
     if row is None:
         raise HTTPException(404, "Không tìm thấy phiếu hỗ trợ.")
     return row
+
+
+def require_pending_request(cur, user_id, ticket_id, action):
+    ticket = locked_ticket(cur, user_id, ticket_id)
+    if not ticket_row(cur, user_id, ticket_id)["can_modify"]:
+        raise HTTPException(409, f"Yêu cầu đã được tiếp nhận hoặc không còn ở trạng thái Mới, không thể {action}. Vui lòng làm mới.")
+    return ticket
+
+
+def edit_ticket(user_id, ticket_id, body):
+    with customer_cursor(user_id, coordinate=True) as cur:
+        require_pending_request(cur, user_id, ticket_id, "sửa")
+        execute(cur, "SELECT 1 FROM {loai_ho_tro} WHERE ht_ma=%s AND dang_hoat_dong", (body.type_id,))
+        if cur.fetchone() is None:
+            raise HTTPException(422, "Loại hỗ trợ không còn hoạt động.")
+        execute(cur, """UPDATE {phieu_ho_tro}
+            SET tieu_de=%s,mo_ta=%s,nhom_ma=CASE WHEN ht_ma IS DISTINCT FROM %s THEN NULL ELSE nhom_ma END,
+                ht_ma=%s,ngay_cap_nhat=clock_timestamp() WHERE phieu_ma=%s""",
+            (body.title, body.description, body.type_id, body.type_id, ticket_id))
+        result = ticket_row(cur, user_id, ticket_id)
+    record(user_id, "customer.ticket.edit", ticket_id)
+    return result
+
+
+def cancel_ticket(user_id, ticket_id, body):
+    with customer_cursor(user_id, coordinate=True) as cur:
+        ticket = require_pending_request(cur, user_id, ticket_id, "hủy")
+        execute(cur, "SELECT tt_ma FROM {trang_thai} WHERE ma='DA_HUY'")
+        target = cur.fetchone()
+        if target is None:
+            raise ConfigurationError("Thiếu trạng thái DA_HUY trong danh mục.")
+        execute(cur, "UPDATE {phieu_ho_tro} SET tt_ma=%s,ngay_cap_nhat=clock_timestamp() WHERE phieu_ma=%s",
+                (target["tt_ma"], ticket_id))
+        execute(cur, """INSERT INTO {lich_su_trang_thai}
+            (phieu_ma,tt_cu_ma,tt_moi_ma,nguoi_thay_doi_ma,ghi_chu)
+            VALUES (%s,%s,%s,%s,%s)""", (ticket_id, ticket["tt_ma"], target["tt_ma"], user_id, body.reason))
+        enqueue(cur, ticket_id, "cancelled", body.reason)
+        return ticket_row(cur, user_id, ticket_id)
 
 
 def require_interactive(ticket):

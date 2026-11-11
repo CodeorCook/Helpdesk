@@ -214,6 +214,26 @@ body:has(.manager-dialog[open]) {overflow:hidden}
 .manager-monitor-actions {margin-top:12px;justify-content:space-between}
 .manager-monitor-actions .button {min-height:42px;padding:8px 12px;font-size:13px}
 .manager-monitor-table td {overflow-wrap:anywhere}
+.manager-monitor-table .ticket-table {table-layout:fixed}
+.manager-monitor-table th:nth-child(1) {width:15%}
+.manager-monitor-table th:nth-child(2) {width:27%}
+.manager-monitor-table th:nth-child(3) {width:25%}
+.manager-monitor-table th:nth-child(5) {width:14%}
+.manager-monitor-table tbody tr {cursor:pointer;transition:background-color .15s ease}
+.manager-monitor-table tbody tr:is(:hover,:focus-within) {background:var(--pale)}
+.manager-monitor-table tbody tr:focus-within {outline:2px solid var(--link);outline-offset:-2px}
+.manager-monitor-title {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.manager-detail-navigation,.manager-detail-navigation nav {
+  display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap
+}
+.manager-detail-navigation {justify-content:space-between;margin-bottom:16px}
+.manager-ticket-actions {display:flex;justify-content:flex-end;margin:0 0 24px}
+@media(max-width:600px) {
+  .manager-monitor-title {white-space:normal}
+}
+@media(prefers-reduced-motion:reduce) {
+  .manager-monitor-table tbody tr {transition:none}
+}
 @keyframes manager-refresh {to {transform:rotate(360deg)}}
 @media(prefers-reduced-motion:no-preference) {
   .manager-refresh-spin {animation:manager-refresh 900ms linear infinite}

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, Field
-from schemas.customer import StrictInput, TicketCreate, TicketResponse, MessageCreate, AttachmentResponse, HistoryResponse
+from schemas.customer import TicketCancel, StrictInput, TicketCreate, TicketResponse, MessageCreate, AttachmentResponse, HistoryResponse
 
 
 class StaffTicket(TicketResponse):
@@ -9,6 +9,8 @@ class StaffTicket(TicketResponse):
     group_name: str | None
     assigned_id: str | None
     priority_id: str
+    priority_rank: int | None = None
+    unread_customer_messages: int | None = None
     recommended: bool = False
     sla_name: str | None
     response_due: datetime | None
@@ -23,6 +25,11 @@ class StaffPage(BaseModel):
     total: int
     page: int
     page_size: int
+    attention: int | None = None
+    soon: int | None = None
+    overdue: int | None = None
+    server_now: datetime | None = None
+    next_transition: datetime | None = None
 
 
 class StaffOverview(BaseModel):
@@ -38,6 +45,28 @@ class StaffOverview(BaseModel):
 class StaffCreate(TicketCreate):
     customer_id: int = Field(gt=0, le=9223372036854775807)
     priority_id: int = Field(gt=0, le=32767)
+
+
+class StaffApprove(TicketCreate):
+    priority_id: int = Field(gt=0, le=32767)
+    expected_updated_at: datetime
+
+
+class StaffReject(TicketCancel):
+    expected_updated_at: datetime
+
+
+class RequestSnapshot(BaseModel):
+    title: str
+    description: str
+    type_id: str | None
+    type_name: str | None
+    priority_id: str
+    sla_name: str | None
+    response_due: datetime | None
+    resolution_due: datetime | None
+    sla_state: str
+    captured_at: datetime
 
 
 class Classification(StrictInput):
@@ -88,6 +117,7 @@ class StaffMessageResponse(BaseModel):
 
 
 class StaffDetail(StaffTicket):
+    request_snapshot: RequestSnapshot | None = None
     customer: Person
     messages: list[StaffMessageResponse]
     messages_truncated: bool

@@ -13,6 +13,8 @@ export function MemberDialog({ groupId, existing, close, added }: {
   const [selection, setSelection] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const available = results?.filter(person => !person.memberships?.length) ?? [];
+  const assigned = results?.filter(person => person.memberships?.length) ?? [];
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,13 +55,16 @@ export function MemberDialog({ groupId, existing, close, added }: {
       <Button type="submit" className="secondary" disabled={busy}>Tìm nhân viên</Button>
     </form>
     <p className="muted">Hiển thị tối đa 20 kết quả mỗi lần tìm. Dùng email hoặc mã nhân viên để tìm chính xác hơn.</p>
-    {results?.length === 0 && <p role="status">Chưa tìm thấy nhân viên có thể thêm.</p>}
+    {results && !available.length && <p role="status">Chưa tìm thấy nhân viên chưa thuộc nhóm.</p>}
+    {!!assigned.length && <ul>{assigned.map(person => <li key={person.id}>
+      {person.name} đang thuộc {person.memberships?.map(group => group.name).join(', ')}. Mở nhóm hiện tại để chuyển nhóm.
+    </li>)}</ul>}
     {error && <p role="alert" className="error-box">{error}</p>}
     <form className="manager-form" onSubmit={add}>
-      {!!results?.length && <label className="field">Nhân viên
+      {!!available.length && <label className="field">Nhân viên
         <select required value={selection} disabled={busy} onChange={event => setSelection(event.target.value)}>
           <option value="">Chọn nhân viên</option>
-          {results.map(person => <option key={person.id} value={person.id}>{person.name} · #{person.id} · {person.email}</option>)}
+          {available.map(person => <option key={person.id} value={person.id}>{person.name} · #{person.id} · {person.email}</option>)}
         </select>
       </label>}
       <div className="actions manager-dialog-actions">

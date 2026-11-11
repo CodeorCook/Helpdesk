@@ -1,8 +1,43 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { RequestSummary, TicketStatus, usesRequestSummary } from './RequestSummary';
 import { Button } from '../components';
 import { customerApi, formatDate, type Catalog, type Ticket } from './api';
-export function TicketTable({items}:{items:Ticket[]}){return items.length?<div className="table-scroll"><table className="ticket-table"><thead><tr><th>Mã phiếu / Nội dung</th><th>Loại hỗ trợ</th><th>Trạng thái</th><th>Cập nhật</th></tr></thead><tbody>{items.map(t=><tr key={t.id}><td><Link className="ticket-title" to={`/customer/tickets/${t.id}`}>{t.title}</Link><small>#HT-{t.id}</small></td><td data-label="Loại hỗ trợ">{t.type_name||'Chưa phân loại'}</td><td data-label="Trạng thái"><span className={`badge ${['MOI','DANG_XU_LY'].includes(t.status)?'yellow':''}`}>{t.status_label}</span></td><td data-label="Cập nhật">{formatDate(t.updated_at)}</td></tr>)}</tbody></table></div>:<div className="empty-state"><h3>Chưa có phiếu phù hợp</h3><p>Thử điều chỉnh bộ lọc hoặc tạo yêu cầu hỗ trợ đầu tiên.</p><Link className="text-link" to="/customer/tickets/new">Tạo phiếu hỗ trợ →</Link></div>;}
+export function TicketTable({ items, onRequest }: {
+  items: Ticket[];
+  onRequest?: (ticket: Ticket) => void;
+}) {
+  const navigate = useNavigate();
+
+  function open(ticket: Ticket) {
+    if (onRequest && usesRequestSummary(ticket.status)) onRequest(ticket);
+    else navigate(`/customer/tickets/${ticket.id}`);
+  }
+
+  if (!items.length) return <div className="empty-state"><h3>Chưa có phiếu phù hợp</h3>
+    <p>Thử điều chỉnh bộ lọc hoặc tạo yêu cầu hỗ trợ đầu tiên.</p>
+    <Link className="text-link" to="/customer/tickets/new">Tạo phiếu yêu cầu →</Link>
+  </div>;
+
+  return <div className="table-scroll"><table className="ticket-table customer-ticket-table">
+    <thead><tr><th>Mã phiếu / Nội dung</th><th>Loại hỗ trợ</th><th>Trạng thái</th><th>Cập nhật</th></tr></thead>
+    <tbody>{items.map(ticket => <tr key={ticket.id} onClick={event => {
+      if (!(event.target instanceof Element) || !event.target.closest('a, button')) open(ticket);
+    }}>
+      <td><Link className="ticket-title" to={`/customer/tickets/${ticket.id}`} onClick={event => {
+        if (onRequest && usesRequestSummary(ticket.status) && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+          event.preventDefault();
+          open(ticket);
+        }
+      }}>{ticket.title}</Link><small>#HT-{ticket.id}</small></td>
+      <td data-label="Loại hỗ trợ">{ticket.type_name || 'Chưa phân loại'}</td>
+      <td data-label="Trạng thái"><TicketStatus ticket={ticket}/>
+        {ticket.end_reason && <small className="customer-ticket-reason" title={ticket.end_reason}>Lý do: {ticket.end_reason}</small>}
+      </td>
+      <td data-label="Cập nhật">{formatDate(ticket.updated_at)}</td>
+    </tr>)}</tbody>
+  </table></div>;
+}
 type TicketPage = { items: Ticket[]; total: number; page: number; page_size: number };
 
 function pageCount(data: TicketPage) {
@@ -16,6 +51,9 @@ export function Tickets() {
   const [statuses, setStatuses] = useState<Catalog[]>([]);
   const [catalogError, setCatalogError] = useState('');
   const [error, setError] = useState('');
+  const [request, setRequest] = useState<string>();
+  const [revision, setRevision] = useState(0);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -50,7 +88,7 @@ export function Tickets() {
       setData(result);
     }).catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
-  }, [params, setParams]);
+  }, [params, setParams, revision]);
 
   function filter(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -73,11 +111,9 @@ export function Tickets() {
   return <>
     <div className="page-heading">
       <div>
-        <span className="eyebrow">PHIẾU HỖ TRỢ</span>
         <h1>Lịch sử yêu cầu</h1>
-        <p>Tìm theo tiêu đề, loại hỗ trợ, trạng thái và thời gian tạo phiếu (giờ Việt Nam).</p>
       </div>
-      <Link className="button" to="/customer/tickets/new">Tạo phiếu hỗ trợ</Link>
+      <Link className="button" to="/customer/tickets/new">Tạo phiếu yêu cầu</Link>
     </div>
     <form className="panel customer-history-filters" key={params.toString()} onSubmit={filter}>
       <label className="field">Tiêu đề phiếu
@@ -113,7 +149,7 @@ export function Tickets() {
     {error && <p className="error-box" role="alert">{error}</p>}
     {!data && !error && <p role="status">Đang tải danh sách…</p>}
     {data && <section className="panel customer-history-panel" aria-label="Danh sách phiếu hỗ trợ">
-      <div className="customer-history-table"><TicketTable items={data.items}/></div>
+      <div className="customer-history-table"><TicketTable items={data.items} onRequest={ticket => setRequest(ticket.id)}/></div>
       <nav className="customer-history-pagination" aria-label="Chuyển trang danh sách phiếu">
         <Button className="secondary" disabled={data.page <= 1} onClick={() => move(data.page - 1)}>Trước</Button>
         <span aria-live="polite">
@@ -124,5 +160,8 @@ export function Tickets() {
         <Button className="secondary" disabled={data.page >= pageCount(data)} onClick={() => move(data.page + 1)}>Sau</Button>
       </nav>
     </section>}
+    {notice && <p className="success-box" role="status">{notice}</p>}
+    {request && <RequestSummary id={request} close={() => setRequest(undefined)}
+      changed={message => { setRevision(value => value + 1); if (message) setNotice(message); }}/>}
   </>;
 }

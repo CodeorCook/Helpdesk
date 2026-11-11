@@ -20,7 +20,7 @@ TABLES=(*staff.TABLES,'quan_tri_vien')
 
 
 def execute(cur,statement,params=()):
-    cur.execute(sql.SQL(statement).format(**{t:sql.Identifier(database_schema(),t) for t in TABLES}),params)
+    cur.execute(sql.SQL(statement).format(**{t:sql.Identifier(database_schema(),t) for t in (*TABLES, 'account_lock_event')}),params)
 
 
 @contextmanager
@@ -60,6 +60,7 @@ def users(actor,search='',role=None,status=None,page=1,page_size=10):
     with manager_cursor(actor) as (cur,_):
         execute(cur,'SELECT count(*) total FROM {nguoi_dung}'+where,params);total=cur.fetchone()['total']
         execute(cur,ACCOUNT+where+' ORDER BY nd_ma DESC LIMIT %s OFFSET %s',params+[page_size,(page-1)*page_size]);rows=cur.fetchall()
+        add_memberships(cur, rows)
         for row in rows:row['role_label']=ROLES[row['role']][1]
         return dict(items=rows,total=total,page=page,page_size=page_size)
 
@@ -104,6 +105,16 @@ def update_account(actor,user_id,body):
         action = 'account.update'
         if row['status'] != body.status:
             action = 'account.lock' if body.status == 'KHOA' else 'account.unlock'
+            reason = (body.lock_reason or '').strip() if body.status == 'KHOA' else None
+            if body.status == 'KHOA' and not reason:
+                raise HTTPException(422, 'Vui lòng nhập lý do khóa tài khoản.')
+            table = sql.Identifier(database_schema(), 'account_lock_event').as_string(cur)
+            cur.execute('SELECT to_regclass(%s) IS NOT NULL available', (table,))
+            if cur.fetchone()['available']:
+                execute(cur, '''INSERT INTO {account_lock_event}(account_id,actor_id,locked,reason)
+                    VALUES (%s,%s,%s,%s)''', (user_id, actor, body.status == 'KHOA', reason))
+            elif body.status == 'KHOA':
+                raise HTTPException(503, 'Cần áp dụng migration 004_account_lock_event.sql trước khi khóa tài khoản.')
         events.append((action, user_id))
         return account_row(cur,user_id)
 
@@ -206,6 +217,7 @@ def group_detail(actor,group_id):
         execute(cur,'''SELECT n.nd_ma::text id,n.ho_ten name,n.trang_thai status,
           (SELECT count(*) FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma) WHERE p.nhan_vien_phu_trach_ma=n.nd_ma AND NOT t.la_ket_thuc AND t.ma<>'DA_GIAI_QUYET') workload
           FROM {thanh_vien_nhom} m JOIN {nguoi_dung} n ON n.nd_ma=m.nhan_vien_ma WHERE m.nhom_ma=%s ORDER BY n.nd_ma''',(group_id,));group['people']=cur.fetchall()
+        add_memberships(cur, group['people'])
         execute(cur,'SELECT l.ht_ma::text id,l.ten name FROM {xu_ly_mac_dinh} x JOIN {loai_ho_tro} l USING(ht_ma) WHERE x.nhom_ma=%s ORDER BY l.ht_ma',(group_id,));group['types']=cur.fetchall()
         return group
 
@@ -226,19 +238,68 @@ def update_group(actor,group_id,body):
         events.append(('group.update',group_id));return group_row(cur,group_id)
 
 
+def add_memberships(cur, people):
+    if not people:
+        return
+    execute(cur, '''SELECT m.nhan_vien_ma::text employee_id,g.nhom_ma::text id,g.ten name,
+        (SELECT count(*) FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma)
+         WHERE p.nhan_vien_phu_trach_ma=m.nhan_vien_ma AND NOT t.la_ket_thuc AND ''' + staff.GROUP + '''=g.nhom_ma) pending
+        FROM {thanh_vien_nhom} m JOIN {nhom_ho_tro} g USING(nhom_ma)
+        WHERE m.nhan_vien_ma=ANY(%s::bigint[]) ORDER BY g.nhom_ma''', ([person['id'] for person in people],))
+    memberships = {}
+    for group in cur.fetchall():
+        memberships.setdefault(group.pop('employee_id'), []).append(group)
+    for person in people:
+        person['memberships'] = memberships.get(person['id'], [])
+
+
+def require_active_employee(cur, employee_id):
+    execute(cur, """SELECT v.nd_ma FROM {nhan_vien} v JOIN {nguoi_dung} n USING(nd_ma)
+        WHERE n.nd_ma=%s AND n.vai_tro='NHAN_VIEN' AND n.trang_thai='HOAT_DONG' FOR UPDATE OF v""", (employee_id,))
+    if cur.fetchone() is None:
+        raise HTTPException(422, 'Cần nhân viên có hồ sơ và tài khoản hoạt động.')
+
+
+def employee_memberships(cur, employee_id):
+    person = {'id': str(employee_id)}
+    add_memberships(cur, [person])
+    return person['memberships']
+
+
+def change_employee_group(actor, group_id, body):
+    with manager_cursor(actor, True) as (cur, events):
+        if not group_row(cur, group_id, True)['active']:
+            raise HTTPException(409, 'Nhóm đích phải đang hoạt động.')
+        require_active_employee(cur, body.employee_id)
+        current = employee_memberships(cur, body.employee_id)
+        if {int(g['id']) for g in current} != set(body.expected_groups):
+            raise HTTPException(409, 'Thành viên đã đổi nhóm. Hãy tải lại để xác nhận.')
+        removed = [g for g in current if g['id'] != str(group_id)]
+        if any(g['pending'] for g in removed):
+            raise HTTPException(409, 'Nhân viên còn phiếu chưa kết thúc ở nhóm sẽ bỏ. Hãy điều phối các phiếu đó trước.')
+        execute(cur, 'DELETE FROM {thanh_vien_nhom} WHERE nhan_vien_ma=%s AND nhom_ma<>%s', (body.employee_id, group_id))
+        execute(cur, 'INSERT INTO {thanh_vien_nhom}(nhom_ma,nhan_vien_ma) VALUES(%s,%s) ON CONFLICT DO NOTHING',
+                (group_id, body.employee_id))
+        events.append(('group.member.move', f'{group_id}:{body.employee_id}'))
+        return {'message': 'Đã cập nhật nhóm duy nhất của nhân viên.'}
+
+
 def member_change(actor,group_id,employee_id,remove=False):
     with manager_cursor(actor,True) as (cur,events):
         group=group_row(cur,group_id,True)
         if remove:
             execute(cur,'SELECT 1 FROM {thanh_vien_nhom} WHERE nhom_ma=%s AND nhan_vien_ma=%s',(group_id,employee_id))
             if cur.fetchone() is None:raise HTTPException(404,'Nhân viên không thuộc nhóm này.')
-            execute(cur,'SELECT count(*) n FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma) WHERE p.nhom_ma=%s AND p.nhan_vien_phu_trach_ma=%s AND NOT t.la_ket_thuc',(group_id,employee_id))
-            if cur.fetchone()['n']:raise HTTPException(409,'Thành viên còn phiếu chưa kết thúc trong nhóm. Hãy điều phối trước khi bỏ thành viên.')
+            groups = employee_memberships(cur, employee_id)
+            if any(g['id'] == str(group_id) and g['pending'] for g in groups):
+                raise HTTPException(409,'Thành viên còn phiếu chưa kết thúc trong nhóm. Hãy điều phối trước khi bỏ thành viên.')
             execute(cur,'DELETE FROM {thanh_vien_nhom} WHERE nhom_ma=%s AND nhan_vien_ma=%s',(group_id,employee_id))
         else:
             if not group['active']:raise HTTPException(409,'Không thêm thành viên vào nhóm đã vô hiệu hóa.')
-            execute(cur,"SELECT v.nd_ma FROM {nhan_vien} v JOIN {nguoi_dung} n USING(nd_ma) WHERE n.nd_ma=%s AND n.vai_tro='NHAN_VIEN' AND n.trang_thai='HOAT_DONG' FOR SHARE OF n",(employee_id,))
-            if cur.fetchone() is None:raise HTTPException(422,'Cần nhân viên có hồ sơ và tài khoản hoạt động.')
+            require_active_employee(cur, employee_id)
+            other = [g['name'] for g in employee_memberships(cur, employee_id) if g['id'] != str(group_id)]
+            if other:
+                raise HTTPException(409, 'Nhân viên đang thuộc nhóm ' + ', '.join(other) + '. Hãy dùng thao tác chuyển nhóm.')
             execute(cur,'INSERT INTO {thanh_vien_nhom}(nhom_ma,nhan_vien_ma) VALUES(%s,%s) ON CONFLICT DO NOTHING',(group_id,employee_id))
         events.append(('group.member.remove' if remove else 'group.member.add',str(group_id)+':'+str(employee_id)))
         return {'message':'Đã bỏ thành viên.' if remove else 'Đã thêm thành viên.'}
@@ -303,7 +364,25 @@ def ticket_row(cur,ticket_id,lock=False):
     return staff.decorate(row)
 
 
-def filters(search='',type_id=None,status=None,priority=None,from_date=None,to_date=None,group_id=None,employee_id=None,customer_status=None,scope='all'):
+def can_reply_to_staff(cur, ticket):
+    if ticket['status'] not in ('DANG_XU_LY', 'TAM_DUNG') or not ticket['assigned_id']:
+        return False
+    active = staff.active_assignment(cur, ticket['id'])
+    return bool(active and str(active['nhan_vien_ma']) == ticket['assigned_id']
+                and any(person['id'] == ticket['assigned_id'] for person in staff.eligible(cur, ticket['group_id'])))
+
+
+def send_internal_message(actor, ticket_id, content):
+    with manager_cursor(actor, mutation=True) as (cur, _):
+        ticket = ticket_row(cur, ticket_id, lock=True)
+        if not can_reply_to_staff(cur, ticket):
+            raise HTTPException(409, 'Chỉ có thể trao đổi khi phiếu đang xử lý hoặc tạm dừng và có nhân viên phụ trách hợp lệ.')
+        execute(cur, """INSERT INTO {tin_nhan}(phieu_ma,nguoi_gui_ma,noi_dung,la_ghi_chu_noi_bo)
+            VALUES (%s,%s,%s,TRUE) RETURNING tn_ma::text id""", (ticket_id, actor, content))
+        return {**cur.fetchone(), 'message': 'Đã gửi trao đổi nội bộ.'}
+
+
+def filters(search='',type_id=None,status=None,priority=None,from_date=None,to_date=None,group_id=None,employee_id=None,customer_status=None,scope='all',sla_state=None):
     if from_date and to_date and from_date>to_date:raise HTTPException(422,'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.')
     conditions=['true'];params=[]
     if search:
@@ -316,6 +395,15 @@ def filters(search='',type_id=None,status=None,priority=None,from_date=None,to_d
             conditions.append('p.ngay_tao'+op+'%s');params.append(datetime.combine(date,time.min,timezone(timedelta(hours=7)))+timedelta(days=extra))
     if customer_status:
         conditions.append('EXISTS(SELECT 1 FROM {nguoi_dung} c WHERE c.nd_ma=p.khach_hang_ma AND c.trang_thai=%s)');params.append(customer_status)
+    if sla_state:
+        due = 'LEAST(p.han_xu_ly, CASE WHEN p.ngay_phan_hoi_dau IS NULL THEN p.han_phan_hoi END)'
+        conditions.append(f"""(CASE WHEN s.sla_ma IS NULL THEN 'none'
+            WHEN t.ma IN ('DA_GIAI_QUYET','DA_DONG','DA_HUY') THEN 'ended'
+            WHEN {due} IS NULL THEN 'none'
+            WHEN {due}<now() THEN 'overdue'
+            WHEN {due}<=now()+interval '60 minutes' THEN 'soon'
+            ELSE 'within' END)=%s""")
+        params.append(sla_state)
     if scope in ('waiting','unrouted'):conditions.append("t.ma='MOI' AND p.nhan_vien_phu_trach_ma IS NULL")
     if scope=='unrouted':conditions.append("(g.nhom_ma IS NULL OR NOT g.dang_hoat_dong OR NOT EXISTS(SELECT 1 FROM {thanh_vien_nhom} m JOIN {nhan_vien} v ON v.nd_ma=m.nhan_vien_ma JOIN {nguoi_dung} a ON a.nd_ma=v.nd_ma WHERE m.nhom_ma=g.nhom_ma AND a.vai_tro='NHAN_VIEN' AND a.trang_thai='HOAT_DONG'))")
     return ' WHERE '+' AND '.join(conditions),params
@@ -348,7 +436,9 @@ def ticket_detail(actor,ticket_id):
 def eligible_employees(actor,group_id):
     with manager_cursor(actor) as (cur,_):
         group_row(cur,group_id)
-        return staff.eligible(cur,group_id)
+        people = staff.eligible(cur,group_id)
+        add_memberships(cur, people)
+        return [person for person in people if len(person['memberships']) == 1]
 
 
 def status_history(cur,actor,ticket_id,old,target,reason):
@@ -368,6 +458,8 @@ def assign(actor,ticket_id,body):
         group=group_row(cur,body.group_id,True)
         if not group['active']:raise HTTPException(422,'Nhóm đích phải đang hoạt động.')
         if body.employee_id is not None and str(body.employee_id) not in {p['id'] for p in staff.eligible(cur,body.group_id)}:raise HTTPException(422,'Nhân viên đích phải hoạt động và thuộc nhóm đích.')
+        if body.employee_id is not None and len(employee_memberships(cur, body.employee_id)) != 1:
+            raise HTTPException(409, 'Nhân viên đích đang thuộc nhiều nhóm. Hãy xử lý liên kết trùng trước khi phân công.')
         if ticket['group_id']==str(body.group_id) and ticket['assigned_id']==(str(body.employee_id) if body.employee_id is not None else None):raise HTTPException(409,'Nhóm và phân công đã giống lựa chọn; không tạo thêm lịch sử trùng.')
         if previous:execute(cur,'UPDATE {lich_su_phan_cong} SET ket_thuc=clock_timestamp() WHERE pc_ma=%s',(previous['pc_ma'],))
         if body.employee_id is not None:insert_assignment(cur,ticket_id,body.employee_id,actor,body.reason)

@@ -37,7 +37,7 @@ export function StaffLayout() {
               </NavLink>
             ))}
           </nav>
-          <p>Phiếu ưu tiên được đánh dấu trong danh sách chờ. Chỉ khi tiếp nhận thành công, phiếu mới được giao.</p>
+          <p>Mở yêu cầu đang chờ, kiểm tra nội dung và chọn mức ưu tiên để lập phiếu hỗ trợ.</p>
         </div>
         <div className="sidebar-footer">
           <ThemeSwitcher />

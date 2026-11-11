@@ -1,9 +1,9 @@
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { api,ApiError,type Role } from '../api';
-export type ChatMessage={id:string;sender_id:string;sender:string;content:string;internal:boolean;created_at:string};
+export type ChatMessage={id:string;sender_id:string;sender:string;content:string;internal:boolean;from_customer?:boolean;created_at:string};
 export type ChatEvent={id:string;content:string;created_at:string};
 export type ChatAttachment={id:string;name:string;mime_type:string;size:number;sender_id:string|null;sender:string;created_at:string};
-export type Feed={ticket_id:string;status:string;status_label:string;assigned_id:string|null;assigned_to:string|null;group_id:string|null;can_send:boolean;can_view_internal:boolean;messages:ChatMessage[];events:ChatEvent[];attachments:ChatAttachment[];has_older:boolean;has_more:boolean};
+export type Feed={ticket_id:string;status:string;status_label:string;assigned_id:string|null;assigned_to:string|null;group_id:string|null;can_send:boolean;can_view_internal:boolean;can_send_internal?:boolean;can_mark_read?:boolean;messages:ChatMessage[];events:ChatEvent[];attachments:ChatAttachment[];has_older:boolean;has_more:boolean};
 const active=(f:Feed|null)=>!f||['MOI','DANG_XU_LY','TAM_DUNG'].includes(f.status);
 export function useConversation(role:Role,id:string,onChange?:()=>Promise<void>){
  const [data,setData]=useState<Feed|null>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(true);

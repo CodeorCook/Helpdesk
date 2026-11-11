@@ -118,6 +118,31 @@ def run_customer_stages(stage,conn,client,connection,user_id,body,password,origi
         with conn.cursor() as cur:
             service.execute(cur,'SELECT count(*) FROM {phieu_ho_tro} WHERE khach_hang_ma=%s',(user_id,))
             assert cur.fetchone()[0]==count
+        with conn.transaction(force_rollback=True):
+            pending=client.post('/api/v1/customer/tickets',json=payload,headers=headers).json()
+            path='/api/v1/customer/tickets/'+pending['id']
+            assert pending['can_modify']
+            assert client.patch(path,json=payload,headers=origin).status_code==403
+            assert client.patch(path,json={**payload,'priority':'Cao'},headers=headers).status_code==422
+            with patch.object(service,'record') as audit:
+                edited=client.patch(path,json={**payload,'title':'Tiêu đề đã sửa'},headers=headers)
+                audit.assert_called_once_with(str(user_id),'customer.ticket.edit',int(pending['id']))
+            assert edited.status_code==200 and edited.json()['title']=='Tiêu đề đã sửa'
+            assert edited.json()['priority']==pending['priority']
+            assert client.post(path+'/cancel',json={'reason':'   '},headers=headers).status_code==422
+            cancelled=client.post(path+'/cancel',json={'reason':'  Đã tự khắc phục  '},headers=headers)
+            assert cancelled.status_code==200,cancelled.text
+            assert cancelled.json()['status']=='DA_HUY' and cancelled.json()['end_reason']=='Đã tự khắc phục'
+            assert not cancelled.json()['can_modify']
+            assert client.get(path).json()['end_reason']=='Đã tự khắc phục'
+            assert client.patch(path,json=payload,headers=headers).status_code==409
+            assert client.post(path+'/cancel',json={'reason':'Lặp'},headers=headers).status_code==409
+            assert client.post(path+'/messages',json={'content':'Không thể gửi'},headers=headers).status_code==409
+            with conn.cursor() as cur:
+                service.execute(cur,'SELECT nguoi_thay_doi_ma,ghi_chu,thoi_diem FROM {lich_su_trang_thai} WHERE phieu_ma=%s ORDER BY ls_ma DESC LIMIT 1',(pending['id'],))
+                actor,reason,happened=cur.fetchone()
+                assert actor==user_id and reason=='Đã tự khắc phục' and happened is not None
+            print('PASS pending requests: edit, CSRF, strict input, cancellation reason/actor/time, terminal guards')
         print('PASS B: catalogs, ticket MOI/source/owner, initial history, CSRF, ID injection, FK and atomic rollback')
         if stage!='B':
             run_remaining_stages(stage,conn,client,connection,user_id,body,password,origin,headers,ticket,payload,browser)
@@ -140,6 +165,8 @@ def run_remaining_stages(stage,conn,client,connection,user_id,body,password,orig
         assert client.get('/api/v1/customer/tickets',params={'from':'2030-01-01','to':'2020-01-01'}).status_code==422
         assert client.get(f"/api/v1/customer/tickets/{other_ticket['id']}").status_code==404
         assert other.get(f"/api/v1/customer/tickets/{ticket['id']}").status_code==404
+        assert other.patch(f"/api/v1/customer/tickets/{ticket['id']}",json=payload,headers=other_headers).status_code==404
+        assert other.post(f"/api/v1/customer/tickets/{ticket['id']}/cancel",json={'reason':'Không phải chủ phiếu'},headers=other_headers).status_code==404
         detail=client.get(f"/api/v1/customer/tickets/{ticket['id']}")
         assert detail.status_code==200 and len(detail.json()['history'])==1
         assert 'mat_khau' not in detail.text and 'duong_dan' not in detail.text

@@ -5,12 +5,12 @@ import { Button, Input } from '../components';
 import { ManagerDialog, ManagerStatus } from './Dialog';
 import { ManagerPagination, lastPage } from './Pagination';
 import { GroupDialog } from './GroupDialog';
-import { managerApi, type Page } from './api';
+import { managerApi, type Membership, type Page } from './api';
 import type { TicketCounts } from './metrics';
 
 export type Group = { id: string; name: string; description: string | null; active: boolean; members: number; pending: number };
 export type GroupDetail = Group & {
-  people: { id: string; name: string; status: string; workload: number }[];
+  people: { id: string; name: string; status: string; workload: number; memberships?: Membership[] }[];
   types: { id: string; name: string }[];
   stats: TicketCounts;
 };

@@ -21,7 +21,22 @@ class TicketCreate(StrictInput):
         return value.strip()
 
 
+class TicketCancel(StrictInput):
+    reason: str = Field(min_length=1, max_length=500)
+
+    @field_validator("reason")
+    @classmethod
+    def nonblank(cls, value):
+        if not value.strip():
+            raise ValueError("Vui lòng nhập lý do hủy yêu cầu.")
+        return value.strip()
+
+
 class TicketResponse(BaseModel):
+    can_modify: bool = False
+    end_reason: str | None = None
+    termination_kind: str | None = None
+    closed_by_customer: bool = False
     id: str
     title: str
     description: str

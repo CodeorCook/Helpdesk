@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { formatDate } from '../customer/api';
+import { Link, useNavigate } from 'react-router-dom';
 import type { StaffPage } from '../staff/api';
 import { managerApi } from './api';
 import { ManagerFilters } from './Filters';
 import { lastPage, ManagerPagination } from './Pagination';
 
 export function ManagerTickets() {
+  const navigate = useNavigate();
   const [data, setData] = useState<StaffPage>();
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -54,19 +54,25 @@ export function ManagerTickets() {
     {data && <section className="panel manager-list-panel" aria-label="Danh sách giám sát phiếu" aria-busy={busy}>
       <div className="table-scroll manager-monitor-table">
         <table className="ticket-table">
-          <thead><tr><th>Phiếu</th><th>Nhóm / phụ trách</th><th>Trạng thái / ưu tiên</th><th>SLA</th></tr></thead>
-          <tbody>{data.items.map(ticket => <tr key={ticket.id}>
-            <td data-label="Phiếu">
-              <Link className="text-link" to={`/manager/tickets/${ticket.id}`}>#HT-{ticket.id} · {ticket.title}</Link>
-              <small>{ticket.type_name} · {formatDate(ticket.created_at)}</small>
+          <thead><tr><th>Mã phiếu</th><th>Tiêu đề phiếu</th><th>Nhóm / Loại hỗ trợ</th><th>Trạng thái phiếu</th><th>Mức ưu tiên</th></tr></thead>
+          <tbody>{data.items.map(ticket => {
+            const path = `/manager/tickets/${ticket.id}`;
+            const color = ticket.priority_rank === 3 ? 'da_huy' : ticket.priority_rank === 2 ? 'tam_dung' :
+              ticket.priority_rank === 1 ? 'da_giai_quyet' : '';
+            return <tr key={ticket.id} onClick={event => {
+              if (event.target instanceof Element && !event.target.closest('a') && !window.getSelection()?.toString()) navigate(path);
+            }}>
+            <td data-label="Mã phiếu">
+              <Link className="text-link" to={path} aria-label={`#HT-${ticket.id} · ${ticket.title}`}
+                onKeyDown={event => { if (event.key === ' ') { event.preventDefault(); navigate(path); } }}>#HT-{ticket.id}</Link>
             </td>
-            <td data-label="Nhóm / phụ trách">{ticket.group_name || 'Chưa xác định nhóm'}<small>{ticket.assigned_to || 'Chưa phân công'}</small></td>
-            <td data-label="Trạng thái / ưu tiên">
+            <td data-label="Tiêu đề phiếu"><span className="manager-monitor-title" title={ticket.title}>{ticket.title}</span></td>
+            <td data-label="Nhóm / Loại hỗ trợ">{ticket.group_name || 'Chưa xác định nhóm'}<small>{ticket.type_name || 'Chưa phân loại'}</small></td>
+            <td data-label="Trạng thái phiếu">
               <span className={`staff-status-badge staff-status-${ticket.status.toLowerCase()}`}>{ticket.status_label}</span>
-              <small>{ticket.priority}</small>
             </td>
-            <td data-label="SLA">{ticket.sla_state}</td>
-          </tr>)}</tbody>
+            <td data-label="Mức ưu tiên"><span className={`staff-status-badge staff-status-${color}`}>{ticket.priority}</span></td>
+          </tr>; })}</tbody>
         </table>
         {!data.items.length && <p className="empty-state">Chưa có phiếu phù hợp.</p>}
       </div>

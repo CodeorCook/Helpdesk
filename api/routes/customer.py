@@ -8,7 +8,7 @@ from starlette.concurrency import run_in_threadpool
 from api.routes.auth import require_role, session_claims, set_session
 from core.security import check_csrf, refresh_account_session
 from schemas.auth import UserResponse
-from schemas.customer import (AttachmentResponse, CatalogItem, CloseRequest, MessageCreate, MessageResponse, Overview,
+from schemas.customer import (AttachmentResponse, CatalogItem, TicketCancel, CloseRequest, MessageCreate, MessageResponse, Overview,
                               ProfileResponse, ProfileUpdate, RatingCreate, RatingResponse, TicketCreate, TicketDetail, TicketPage, TicketResponse)
 from core.uploads import allowed_extensions, upload_limit
 from schemas.customer import UploadPolicy
@@ -61,6 +61,18 @@ def tickets(search: str = Query(default="", max_length=200), type_id: int | None
 @router.get("/tickets/{ticket_id}", response_model=TicketDetail)
 def ticket_detail(ticket_id: int = Path(gt=0, le=9223372036854775807), user: UserResponse = Depends(customer)):
     return service.detail(user.id, ticket_id)
+
+
+@router.patch("/tickets/{ticket_id}", response_model=TicketResponse, dependencies=[Depends(mutation_guard)])
+def edit_ticket(body: TicketCreate, ticket_id: int = Path(gt=0, le=9223372036854775807),
+                user: UserResponse = Depends(customer)):
+    return service.edit_ticket(user.id, ticket_id, body)
+
+
+@router.post("/tickets/{ticket_id}/cancel", response_model=TicketResponse, dependencies=[Depends(mutation_guard)])
+def cancel_ticket(body: TicketCancel, ticket_id: int = Path(gt=0, le=9223372036854775807),
+                  user: UserResponse = Depends(customer)):
+    return service.cancel_ticket(user.id, ticket_id, body)
 
 
 @router.post("/tickets/{ticket_id}/messages", response_model=MessageResponse, status_code=201, dependencies=[Depends(mutation_guard)])

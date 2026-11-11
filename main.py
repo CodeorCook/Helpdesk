@@ -11,8 +11,10 @@ from api.routes.staff import router as staff_router
 from api.routes.manager import router as manager_router
 from api.routes.chatbot import router as chatbot_router
 from core.uploads import BodyLimitMiddleware
+from services.email_service import lifespan
 
 app = FastAPI (
+    lifespan = lifespan,
     title = "Hệ thống quản lý hỗ trợ khách hàng",
     description = "Backend hệ thống hỗ trợ khách hàng",
     version = "0.1.0"

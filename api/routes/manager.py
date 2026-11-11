@@ -9,12 +9,12 @@ from api.routes.auth import require_role
 from api.routes.customer import mutation_guard
 from schemas.auth import UserResponse
 from schemas.manager import Account,AccountPage,AccountUpdate,EmployeeCreate,RoleChange,StoredRole,DashboardOverview
-from schemas.manager import GroupInput,GroupUpdate,Group,GroupDetail,GroupPage,MemberInput,Message,Routing,RoutingInput
+from schemas.manager import GroupInput,GroupUpdate,Group,GroupDetail,GroupPage,MemberInput,MembershipChange,Message,Routing,RoutingInput,SLAState
 from schemas.manager import AssignmentInput
 from schemas.manager import SLAInput,SLAUpdate,SLAApply,Policy,PolicyPage
 from schemas.manager import ReportAnalytics,ReportPage,ActivityPage
-from schemas.staff import StaffPage,StaffTicket,StaffDetail,Employee
-from schemas.customer import CatalogItem
+from schemas.staff import StaffPage,StaffTicket,StaffDetail,Employee,Receipt
+from schemas.customer import CatalogItem, MessageCreate
 from services import manager_service as service
 from services import report_service
 
@@ -74,6 +74,11 @@ def add_member(body:MemberInput,group_id:int=ID(),user:UserResponse=Depends(mana
 def remove_member(body:MemberInput,group_id:int=ID(),user:UserResponse=Depends(manager)):return service.member_change(user.id,group_id,body.employee_id,True)
 
 
+@router.post('/groups/{group_id}/members/move', response_model=Message, dependencies=[Depends(mutation_guard)])
+def move_member(body: MembershipChange, group_id: int = ID(), user: UserResponse = Depends(manager)):
+    return service.change_employee_group(user.id, group_id, body)
+
+
 @router.get('/routing',response_model=list[Routing])
 def routing(user:UserResponse=Depends(manager)):return service.routing(user.id)
 
@@ -92,8 +97,9 @@ def ticket_filters(search:str=Query('',max_length=200),type_id:int|None=Query(No
                    status:str|None=Query(None,max_length=30,pattern='^[A-Z_]+$'),priority:int|None=Query(None,gt=0,le=32767),
                    from_date:date|None=Query(None,alias='from',le=date(9998,12,31)),to_date:date|None=Query(None,alias='to',le=date(9998,12,31)),
                    group_id:int|None=Query(None,alias='group',gt=0,le=9223372036854775807),employee_id:int|None=Query(None,alias='employee',gt=0,le=9223372036854775807),
-                   customer_status:Literal['HOAT_DONG','KHOA']|None=None,scope:Literal['all','waiting','unrouted']='all'):
-    return dict(search=search,type_id=type_id,status=status,priority=priority,from_date=from_date,to_date=to_date,group_id=group_id,employee_id=employee_id,customer_status=customer_status,scope=scope)
+                   customer_status:Literal['HOAT_DONG','KHOA']|None=None,scope:Literal['all','waiting','unrouted']='all',
+                   sla_state:SLAState|None=None):
+    return dict(search=search,type_id=type_id,status=status,priority=priority,from_date=from_date,to_date=to_date,group_id=group_id,employee_id=employee_id,customer_status=customer_status,scope=scope,sla_state=sla_state)
 
 
 @router.get('/tickets',response_model=StaffPage)
@@ -180,6 +186,12 @@ def conversation(ticket_id:int=Path(gt=0,le=9223372036854775807),after:int|None=
     if after is not None and before is not None:
         raise HTTPException(422,'Chỉ chọn một hướng phân trang hội thoại.')
     return conversation_service.conversation('manager',user.id,ticket_id,after,before)
+
+
+@router.post('/tickets/{ticket_id}/internal-messages', response_model=Receipt, status_code=201, dependencies=[Depends(mutation_guard)])
+def send_internal_message(body: MessageCreate, ticket_id: int = Path(gt=0, le=9223372036854775807),
+                          user: UserResponse = Depends(manager)):
+    return service.send_internal_message(user.id, ticket_id, body.content)
 
 
 @router.get('/tickets/{ticket_id}/attachments/{attachment_id}/preview',response_class=FileResponse)

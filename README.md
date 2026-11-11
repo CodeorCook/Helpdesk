@@ -234,13 +234,15 @@ Kết quả chi tiết và CHƯA CHẠY: `docs/PHASE2_TEST_RESULTS.md`; báo cá
 
 ## Giai đoạn 3 — Nhân viên hỗ trợ (Phương án A)
 
-Đề xuất **không phải phân công**: xếp theo nhóm chuyên môn và khối lượng phiếu chưa giải quyết. Chỉ nút **Tiếp nhận** thành công mới cập nhật cùng phiếu khách đã tạo và thêm một phân công hiệu lực. Hai người nhận đồng thời: một thành công, người còn lại nhận 409. Nhân viên giải quyết; khách xác nhận đóng và đánh giá. Chuyển trực tiếp chỉ trong cùng nhóm; đổi loại không tự chuyển người/nhóm hoặc tính lại SLA.
+Đề xuất **không phải phân công**: xếp theo nhóm chuyên môn và khối lượng phiếu chưa giải quyết. Chỉ thao tác **Lập phiếu hỗ trợ** trên trang xét duyệt mới chuyển cùng bản ghi sang Đang xử lý và tạo phân công hiệu lực. Hai người nhận đồng thời: một thành công, người còn lại nhận 409. Nhân viên giải quyết; khách xác nhận đóng và đánh giá. Chuyển trực tiếp chỉ trong cùng nhóm; đổi loại không tự chuyển người/nhóm hoặc tính lại SLA.
 
 Routes: `/staff` (dashboard thật), `/staff/queue`, `/staff/recommended`, `/staff/mine`, `/staff/team`, `/staff/new` (phiếu riêng thay khách điện thoại/trực tiếp), `/staff/tickets/:id`. Bộ lọc ID/#HT-ID/tiêu đề, loại, trạng thái, ưu tiên, khoảng ngày và phân trang. API prefix `/api/v1/staff`; mọi mutation giữ cookie HttpOnly/CSRF/Origin. Danh sách API, bảng mapping Use Case → API → CSDL, quyền và kết quả kiểm thử: [PHASE3_TEST_RESULTS.md](docs/PHASE3_TEST_RESULTS.md).
 
 Đã được duyệt và áp dụng 4 nhóm + 8 ánh xạ nội thất; script chạy lại an toàn. Chưa có tài khoản/hồ sơ nhân viên, thành viên nhóm và SLA sử dụng; cần cấp/cấu hình được duyệt trước khi tiếp nhận dữ liệu thật. Không có mật khẩu mặc định hoặc đăng ký nhân viên công khai. [Chi tiết cấu hình nhóm](docs/PHASE3_GROUP_SETUP.md). SLA chỉ hiển thị hạn thật; thiếu cấu hình báo rõ, không sinh deadline. Cảnh báo cập nhật khi bấm Làm mới, không tác vụ nền/push.
 
-Lệnh khởi động Windows giữ nguyên ở đầu README. Để thử: `/register` → khách tạo phiếu → nhân viên đã được cấp và thuộc nhóm mở `/staff/queue` → Tiếp nhận → phản hồi/tệp → Đã giải quyết → khách đóng/đánh giá. Không tạo phiếu thứ hai sau tiếp nhận. Tài khoản/nhóm/chính sách SLA của Quản lý ở Giai đoạn 4.
+Trước khi bật luồng lập phiếu trên CSDL đang dùng, mở [001_staff_request_snapshot.sql](docs/migrations/001_staff_request_snapshot.sql) trong DBeaver với kết nối DB_HELPDESK và chạy toàn bộ script. Migration thêm cột JSONB `helpdesk.phieu_ho_tro.yeu_cau_goc`, giữ phiếu hiện hữu và không điền lại nội dung đã mất của các phiếu cũ. Nếu hết thời gian chờ khóa, rollback giao dịch và thử lại vào lúc ít tải. Script kiểm thử race dùng các kết nối thật và cần cột này trong CSDL kiểm thử.
+
+Lệnh khởi động Windows giữ nguyên ở đầu README. Để thử: `/register` → khách tạo phiếu → nhân viên đã được cấp và thuộc nhóm mở `/staff/queue` → mở yêu cầu, chọn mức ưu tiên và lập phiếu → phản hồi/tệp → Đã giải quyết → khách đóng/đánh giá. Không tạo phiếu thứ hai sau tiếp nhận. Tài khoản/nhóm/chính sách SLA của Quản lý ở Giai đoạn 4.
 
 ```powershell
 # Tại thư mục Backend; không chạy đồng thời các bộ browser dùng port 8001/5174
@@ -387,3 +389,27 @@ Bài thử live dùng đúng cấu hình chatbot (chỉ chạy chủ động, c�
 ```
 
 Unit mặc định vẫn `python -m unittest discover -s tests -v`, dùng mock, không gọi API thật. File unit đổi tên thành `tests/test_gemini_adapter.py` để tránh nhập nhầm script `test_gemini.py` ở thư mục gốc. Chi tiết, kết quả và cách thử lại UI: [GEMINI_503_DEBUG.md](docs/GEMINI_503_DEBUG.md).
+
+### Không tiếp nhận và email cho khách hàng
+
+Áp dụng [migration 001](docs/migrations/001_staff_request_snapshot.sql) nếu chưa có, rồi mở [migration 002](docs/migrations/002_request_rejection_and_email.sql) trong DBeaver với kết nối DB_HELPDESK và chạy toàn bộ script. Migration 002 bổ sung loại kết thúc và bảng hàng chờ email. Yêu cầu không tiếp nhận dùng trạng thái kết thúc DA_HUY với mã TU_CHOI_YEU_CAU, không thuộc tập phiếu hỗ trợ đã hoàn tất.
+
+Backend đọc `MAIL_SERVER`, `MAIL_PORT`, `MAIL_FROM`, `MAIL_FROM_NAME`, `MAIL_USERNAME` và `MAIL_PASSWORD` khi cả `SMTP_HOST` và `SMTP_FROM` để trống. Nếu một trong hai biến SMTP này có giá trị, worker chỉ đọc bộ `SMTP_*`. Cổng 587 dùng STARTTLS. Cờ `MAIL_STARTTLS` hoặc `SMTP_USE_TLS` mặc định là `true`. Với Gmail, dùng địa chỉ người gửi được phép bởi tài khoản xác thực. Đặt `EMAIL_FRONTEND_URL` thành URL HTTP(S) của frontend nếu muốn có link xem phiếu. Khởi động lại Backend sau khi sửa cấu hình. Dùng SMTP thử nghiệm và tài khoản nhận thử để xác minh bốn sự kiện.
+
+Hàng chờ có khóa duy nhất theo mã phiếu và sự kiện. `pending` là đang chờ hoặc chờ thử lại, `sent` là SMTP đã nhận, `failed` là gửi thất bại và `uncertain` là chưa rõ máy chủ có nhận hay không. Worker tự thử lại tối đa ba lần với lỗi kết nối hoặc lỗi SMTP từ chối rõ ràng. Lỗi xác thực ghi `smtp_authentication_failed` và đánh dấu thư `failed`. Trạng thái `uncertain` hoặc `sending` tồn đọng cần đối chiếu nhật ký SMTP trước khi gửi lại để tránh thư trùng. Nhật ký ghi loại lỗi, mã phiếu, sự kiện và trạng thái gửi.
+
+### Tin nhắn chưa đọc và trao đổi nội bộ
+
+Áp dụng [migration 003](docs/migrations/003_staff_message_read.sql) trong DBeaver trên DB_HELPDESK để bật đếm tin chưa đọc. Migration tạo bảng dấu đọc theo nhân viên và tin nhắn. Các tin công khai cũ do chủ phiếu gửi bắt đầu ở trạng thái chưa đọc khi chưa có dấu đọc. Trước khi áp dụng, danh sách và hội thoại vẫn mở được, phần đếm và ghi dấu đọc chưa hoạt động.
+
+Phiếu của tôi gửi `scope=mine&page_size=5&sort=newest|oldest`. Backend sắp theo ngày tạo rồi mã phiếu trước khi phân trang. Danh sách tái kiểm tra khi quay lại tab hoặc mỗi 30 giây khi đang hiển thị. Dấu đọc được ghi khi tin công khai của khách xuất hiện trong vùng nhìn thấy của hội thoại trên tab đang mở.
+
+Quản lý có thể gửi tin qua tab Trao đổi với Nhân viên trên phiếu đang xử lý hoặc tạm dừng và có nhân viên phụ trách hợp lệ. Kênh công khai của Quản lý ở chế độ chỉ đọc.
+
+### Khóa tài khoản và nhóm duy nhất của nhân viên
+
+Chạy [migration 004](docs/migrations/004_account_lock_event.sql) trên DB_HELPDESK để bật khóa tài khoản kèm lý do. Sự kiện khóa/mở khóa lưu cùng giao dịch thay đổi tài khoản. Chỉ người nhập đúng mật khẩu mới thấy lý do khóa khi đăng nhập.
+
+API chặn tạo liên kết nhóm thứ hai. Nếu phát hiện dữ liệu cũ trùng nhóm, mở Nhóm hỗ trợ → Chỉnh sửa nhóm → Chuyển nhóm, chọn nhóm duy nhất và xác nhận. Nếu nhóm sẽ bỏ còn phiếu được giao chưa kết thúc, Quản lý phải điều phối phiếu trước. Chạy [migration 005](docs/migrations/005_one_group_per_employee.sql) sau khi xử lý hết liên kết trùng để PostgreSQL bảo vệ thêm bằng chỉ mục duy nhất. Script dừng nếu vẫn còn trùng.
+
+Bộ lọc SLA trên Giám sát phiếu xét hạn xử lý và hạn phản hồi khi chưa phản hồi lần đầu. Mốc gần nhất đã qua là quá hạn, mốc còn trong 60 phút là sắp đến hạn. Phiếu có chính sách đã giải quyết/đóng/hủy thuộc Đã kết thúc theo dõi. Báo cáo lịch sử SLA vẫn dùng các mốc thực tế.
