@@ -37,11 +37,13 @@ ACCESS = '(p.nhan_vien_phu_trach_ma=%s OR ' + MEMBER + ')'
 FROM = ''' FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma)
  JOIN {muc_do_uu_tien} u USING(mdut_ma) LEFT JOIN {loai_ho_tro} l USING(ht_ma)
  LEFT JOIN {nguoi_dung} n ON n.nd_ma=p.nhan_vien_phu_trach_ma
+ LEFT JOIN {nguoi_dung} kh ON kh.nd_ma=p.khach_hang_ma
  LEFT JOIN {nhom_ho_tro} g ON g.nhom_ma=''' + GROUP + '''
  LEFT JOIN {chinh_sach_sla} s ON s.sla_ma=p.sla_ma '''
 VIEW = '''SELECT p.phieu_ma::text id,p.tieu_de title,p.mo_ta description,p.ht_ma::text type_id,l.ten type_name,
  t.ma status,t.ten status_label,u.ten priority,u.thu_tu priority_rank,p.mdut_ma::text priority_id,p.ngay_tao created_at,
  p.ngay_cap_nhat updated_at,p.ngay_dong closed_at,n.ho_ten assigned_to,p.nhan_vien_phu_trach_ma::text assigned_id,
+ kh.ho_ten customer_name,kh.so_dien_thoai customer_phone,
  g.nhom_ma::text group_id,g.ten group_name,s.ten sla_name,p.han_phan_hoi response_due,p.han_xu_ly resolution_due,
  p.ngay_phan_hoi_dau first_response_at,p.ngay_giai_quyet resolved_at''' + FROM
 

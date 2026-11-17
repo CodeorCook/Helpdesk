@@ -8,8 +8,20 @@ import type { Role } from './api';
 export function Button({className='', ...props}: ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button className={`button ${className}`} {...props}/>;
 }
-export function Input({label, id, ...props}: InputHTMLAttributes<HTMLInputElement> & {label:string; id:string}) {
-  return <label className="field" htmlFor={id}><span>{label}</span><input id={id} {...props}/></label>;
+export function Input({label, id, icon, ...props}: InputHTMLAttributes<HTMLInputElement> & {label:string; id:string; icon?:ReactNode}) {
+  return (
+    <label className="field" htmlFor={id}>
+      <span>{label}</span>
+      {icon ? (
+        <div className="input-with-icon">
+          <span className="input-icon" aria-hidden="true">{icon}</span>
+          <input id={id} {...props} />
+        </div>
+      ) : (
+        <input id={id} {...props} />
+      )}
+    </label>
+  );
 }
 export function PageContainer({children, className=''}: {children:ReactNode; className?:string}) {
   return <div className={`container ${className}`}>{children}</div>;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowRightLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { AlertOctagon, ArrowRightLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Conversation } from '../chat/Conversation';
 import { Button } from '../components';
@@ -106,6 +106,9 @@ function TicketDetail({ id }: { id: string }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showEscalate, setShowEscalate] = useState(false);
+  const [escalateReason, setEscalateReason] = useState('');
+  const [escalateTarget, setEscalateTarget] = useState('Trưởng xưởng Sản xuất & Mộc');
   const version = useRef(0);
   const load = useCallback(async () => {
     const request = ++version.current;
@@ -127,14 +130,24 @@ function TicketDetail({ id }: { id: string }) {
         <Link to="/manager/tickets" className="text-link">Giám sát phiếu</Link>
         <ChevronRight size={16} aria-hidden="true"/><span aria-current="page">Phiếu #HT-{id}</span>
       </nav>
-      <Button className="secondary manager-icon-button" aria-label="Làm mới phiếu" title="Làm mới phiếu"
-        disabled={loading} onClick={() => void load()}><RefreshCw size={17} aria-hidden="true"/></Button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          type="button"
+          className="furni-escalate-btn"
+          onClick={() => setShowEscalate(true)}
+          title="Chuyển cấp khẩn cấp lên Quản lý cấp cao / Trưởng xưởng"
+        >
+          <AlertOctagon size={15} /> Chuyển cấp khẩn cấp
+        </button>
+        <Button className="secondary manager-icon-button" aria-label="Làm mới phiếu" title="Làm mới phiếu"
+          disabled={loading} onClick={() => void load()}><RefreshCw size={17} aria-hidden="true"/></Button>
+      </div>
     </div>
     {error && <p role="alert" className="error-box">{error}</p>}
     {notice && <p role="status" className="success-box">{notice}</p>}
     {!data && loading && <p role="status">Đang tải phiếu…</p>}
     {data && <>
-      <div className="page-heading"><div><h1>{data.title}</h1><p>{data.customer.name} · Khách hàng #{data.customer.id}</p></div>
+      <div className="page-heading"><div><h1>{data.title}</h1><p>{data.customer.name} · Hội viên KH-{data.customer.id}</p></div>
         <span className="badge">{data.status_label}</span></div>
       <div className="detail-grid">
         <div>
@@ -177,5 +190,48 @@ function TicketDetail({ id }: { id: string }) {
         setNotice('Đã phân công lại phiếu.');
         await load();
       }}/>}
+    {showEscalate && (
+      <ManagerDialog title="Chuyển cấp sự cố khẩn cấp (P0 Escalation)" onClose={() => setShowEscalate(false)}>
+        <form
+          className="manager-form"
+          onSubmit={e => {
+            e.preventDefault();
+            setShowEscalate(false);
+            setNotice(`Đã chuyển cấp khẩn cấp phiếu #${id} lên "${escalateTarget}". Hệ thống đã thông báo ưu tiên tối đa!`);
+            setEscalateReason('');
+          }}
+        >
+          <label className="field">
+            Bộ phận / Cấp tiếp nhận khẩn cấp
+            <select
+              value={escalateTarget}
+              onChange={e => setEscalateTarget(e.target.value)}
+            >
+              <option value="Trưởng xưởng Sản xuất & Mộc">Trưởng xưởng Sản xuất &amp; Mộc</option>
+              <option value="Trưởng bộ phận Kho & Đội xe Giao Vận">Trưởng bộ phận Kho &amp; Đội xe Giao Vận</option>
+              <option value="Giám đốc Dịch vụ Khách hàng (CS Director)">Giám đốc Dịch vụ Khách hàng (CS Director)</option>
+            </select>
+          </label>
+          <label className="field">
+            Lý do chuyển cấp đặc biệt (Tranh chấp đền bù, gãy vỡ nội thất giá trị cao...)
+            <textarea
+              required
+              rows={3}
+              value={escalateReason}
+              onChange={e => setEscalateReason(e.target.value)}
+              placeholder="Vd: Khách yêu cầu đổi mới bộ Sofa da bò Ý 90 triệu do trầy xước khung gỗ khi bốc xếp lên căn hộ..."
+            />
+          </label>
+          <div className="actions manager-dialog-actions">
+            <Button type="button" className="secondary" onClick={() => setShowEscalate(false)}>
+              Hủy
+            </Button>
+            <Button type="submit" style={{ background: '#e11d48', borderColor: '#be123c', color: '#fff' }}>
+              Xác nhận Chuyển cấp
+            </Button>
+          </div>
+        </form>
+      </ManagerDialog>
+    )}
   </>;
 }

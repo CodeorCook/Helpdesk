@@ -49,6 +49,8 @@ class TicketResponse(BaseModel):
     updated_at: datetime
     closed_at: datetime | None
     assigned_to: str | None
+    customer_name: str | None = None
+    customer_phone: str | None = None
 
 
 class CatalogItem(BaseModel):

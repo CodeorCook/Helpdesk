@@ -92,7 +92,7 @@ function TicketDetail({ id }: { id: string }) {
     {!data && !error && <p role="status">Đang tải phiếu…</p>}
     {data && <>
       <div className="page-heading">
-        <div><h1>{data.title}</h1><p>{data.customer.name} · Khách hàng #{data.customer.id}</p></div>
+        <div><h1>{data.title}</h1><p>{data.customer.name} · Hội viên KH-{data.customer.id}</p></div>
         <span className="badge">{data.status_label}</span>
       </div>
       {data.routing_warning && <p className="confirm-box">{data.routing_warning}</p>}
