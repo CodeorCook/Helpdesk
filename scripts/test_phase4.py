@@ -312,6 +312,24 @@ def main():
             staff_feed=employee_client.get(f'/api/v1/staff/tickets/{ticket_id}/conversation').json()
             assert any(m['id']==reply.json()['id'] and m['internal'] for m in staff_feed['messages'])
             assert 'Phản hồi riêng của Quản lý' not in customer.get(f'/api/v1/customer/tickets/{ticket_id}/conversation').text
+            with conn.transaction(force_rollback=True):
+                for _ in range(10):
+                    assert post(admin,f'manager/tickets/{ticket_id}/internal-messages',dict(content='Fixture paginated')).status_code==201
+                path='/api/v1/manager/reports/activity'
+                params=dict(preset='today',q='#HT-'+ticket_id,actor_name='Quản lý fixture '+prefix,kind='internal')
+                first=admin.get(path,params=params)
+                assert first.status_code==200,first.text
+                next_page=admin.get(path,params={**params,'page':2}).json()
+                assert first.json()['total']==next_page['total']==11 and len(first.json()['items'])==10 and len(next_page['items'])==1
+                assert {row['id'] for row in first.json()['items']}.isdisjoint(row['id'] for row in next_page['items'])
+                assert all(row['ticket_id']==ticket_id and row['kind']=='Ghi chú nội bộ' for row in first.json()['items']+next_page['items'])
+                assert admin.get(path,params={**params,'q':"%' OR 1=1 --"}).json()['total']==0
+                assert employee_client.get(path,params=params).status_code==403
+                assert customer.get(path,params=params).status_code==403
+                for client,role in ((admin,'manager'),(employee_client,'staff'),(customer,'customer')):
+                    payload=client.get(f'/api/v1/{role}/tickets/{ticket_id}').json()
+                    assert 'customer_phone' not in payload and 'customer_name' not in payload
+                print('PASS activity SQL filters before pagination; Manager-only access; no shared customer phone')
             print(f'PASS same-ticket internal messages: PostgreSQL fixture #HT-{ticket_id}')
             assert employee_client.get('/api/v1/staff/tickets/'+ticket_id).json()['first_response_at'] is None
             assert post(customer,f'customer/tickets/{ticket_id}/messages',dict(content='Khách bổ sung nội dung fixture')).status_code==201

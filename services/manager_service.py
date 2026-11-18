@@ -546,7 +546,13 @@ def reports(actor,page=1,page_size=10,**options):
         return dict(summary=summary,items=cur.fetchall(),total=total,page=page,page_size=page_size,locality_supported=False)
 
 
-def activity(actor,page=1,page_size=20,event_from=None,event_to=None,**options):
+ACTIVITY_KINDS = {
+    'status': ['Trạng thái'], 'dispatch': ['Phân công', 'Kết thúc phân công'],
+    'public': ['Phản hồi công khai'], 'internal': ['Ghi chú nội bộ'], 'attachment': ['Tệp đính kèm'],
+}
+
+
+def activity(actor,page=1,page_size=20,event_from=None,event_to=None,*,q='',actor_name='',kind=None,**options):
     if event_from and event_to and event_from>event_to:raise HTTPException(422,'Khoảng thời gian hoạt động không hợp lệ.')
     where,params=filters(**options)
     query='WITH selected AS (SELECT p.phieu_ma,p.tieu_de'+staff.FROM+where+'''), events AS (
@@ -566,6 +572,16 @@ def activity(actor,page=1,page_size=20,event_from=None,event_to=None,**options):
     for value,op,extra in [(event_from,'>=',0),(event_to,'<',1)]:
         if value:
             event_where+=' AND happened_at'+op+'%s';params.append(datetime.combine(value + timedelta(days=extra), time.min, ZoneInfo('Asia/Ho_Chi_Minh')))
+    if q := q.strip():
+        event_where += """ AND (strpos(lower('#HT-'||ticket_id), lower(%s)) > 0
+            OR strpos(lower(concat_ws(' ', title, kind, actor, detail)), lower(%s)) > 0)"""
+        params.extend((q, q))
+    if actor_name := actor_name.strip():
+        event_where += ' AND strpos(lower(actor), lower(%s)) > 0'
+        params.append(actor_name)
+    if kind:
+        event_where += ' AND kind=ANY(%s)'
+        params.append(ACTIVITY_KINDS[kind])
     with manager_cursor(actor) as (cur,_):
         execute(cur,query+'SELECT count(*) total FROM events'+event_where,params);total=cur.fetchone()['total']
         execute(cur,query+'SELECT id,ticket_id,title,happened_at,kind,actor,detail FROM events'+event_where+' ORDER BY happened_at DESC,id DESC LIMIT %s OFFSET %s',params+[page_size,(page-1)*page_size])

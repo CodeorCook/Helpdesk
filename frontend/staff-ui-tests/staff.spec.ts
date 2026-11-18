@@ -1,4 +1,13 @@
 import { test,expect,type Page } from '@playwright/test';
+import { escapeCsvCell } from '../src/manager/reportCsv';
+
+test('CSV escapes untrusted formulas, quotes and line breaks', () => {
+  for (const value of ['=1+1', '+1', '-1', '@SUM(1)', '  =1', '\tplain', '\rplain', '\nplain', '＝1']) {
+    expect(escapeCsvCell(value)).toBe(`"'${value}"`);
+  }
+  expect(escapeCsvCell('a,"b"\nc')).toBe('"a,""b""\nc"');
+  expect(escapeCsvCell(-20)).toBe('"-20"');
+});
 type Role='staff'|'customer'|'manager';
 const statuses=['MOI','DANG_XU_LY','TAM_DUNG','DA_GIAI_QUYET','DA_DONG','DA_HUY'];
 const labels=['Mới','Đang xử lý','Tạm dừng','Đã giải quyết','Đã đóng','Đã hủy'];
@@ -270,7 +279,7 @@ for (const theme of ['light','dark']) test(`queue sorting and request review · 
  const buttonBox = (await rejectButton.boundingBox())!;
  expect(buttonBox.y).toBeGreaterThan(formBox.y + formBox.height);
  expect(Math.abs(buttonBox.x + buttonBox.width - formBox.x - formBox.width)).toBeLessThan(1);
- expect(buttonBox.width).toBeLessThan(formBox.width);
+  expect(buttonBox.width).toBeCloseTo(formBox.width, 0);
  await rejectButton.click();
  const reject=page.getByRole('dialog',{name:'Xác nhận không tiếp nhận'});
  await reject.getByLabel('Lý do không tiếp nhận').fill('  ');
@@ -794,6 +803,36 @@ test('manager SLA table paginates and referenced policies allow only activation 
   }]);
 });
 
+test('manager overview charts and SLA use API data without simulated actions', async ({ page }) => {
+  const {calls} = await fixtures(page, 'manager');
+  const recent = {...ticket(0,'mine'), sla_state:'Quá hạn', assigned_to:'Nhân viên thật'};
+  await page.route('**/api/v1/manager/overview', route => route.fulfill({json:{
+    total:3,waiting:1,processing:1,paused:0,resolved:1,closed:0,overdue:1,users:2,
+    by_status:[{name:'Mới',count:1},{name:'Đang xử lý',count:1},{name:'Đã giải quyết',count:1}],
+    by_group:[{name:'Bảo hành',count:3}],by_priority:[],by_type:[],by_week:[],by_month:[],
+  }}));
+  await page.route('**/api/v1/manager/tickets?*', route => route.fulfill({json:{items:[recent],total:3,page:1,page_size:5}}));
+  await page.route('**/api/v1/manager/reports/analytics?*', route => route.fulfill({json:{metrics:{
+    resolution_on_time:2,resolution_late:1,response_avg:40,response_samples:3,rating_avg:null,ratings:0,
+  }}}));
+  await page.goto('/manager');
+  const chart = page.locator('.manager-unified-chart');
+  await chart.getByRole('tab',{name:/Theo nhóm/}).click();
+  await expect(chart).toContainText('Bảo hành');
+  await expect(page.getByText(/66,7%/)).toBeVisible();
+  await expect(page.getByText('40 phút · 3 phiếu')).toBeVisible();
+  await expect(page.getByText('Chưa có dữ liệu',{exact:true})).toBeVisible();
+  await expect(page.getByRole('row',{name:/HT-1000/})).toContainText('Quá hạn');
+  await expect(page.getByRole('link',{name:'#HT-1000'})).toHaveAttribute('href','/manager/tickets/1000');
+  await expect(page.getByText(/Đóng các phiếu|Gán thợ|Còn 25p|Còn 4h/)).toHaveCount(0);
+  expect(calls.filter(call=>call.method!=='GET')).toHaveLength(0);
+  for (const theme of ['dark','light']) {
+    await page.getByRole('combobox',{name:'Giao diện'}).selectOption(theme);
+    await expect(chart).toBeVisible();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  }
+});
+
 test('manager report activity pages keep the applied date and scope', async ({ page }) => {
   await fixtures(page, 'manager');
   const requests: URLSearchParams[] = [];
@@ -825,16 +864,23 @@ test('manager report activity pages keep the applied date and scope', async ({ p
   await page.getByRole('combobox', { name: 'Nhóm hỗ trợ' }).selectOption('2');
   await page.getByRole('combobox', { name: 'Loại yêu cầu' }).selectOption('6');
   await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
-  await expect(page.locator('.report-metadata')).toContainText('Nhóm: Bảo hành · Loại yêu cầu: Sofa');
+  await expect(page.locator('.furni-scope-tags')).toContainText('Bảo hành');
+  await expect(page.locator('.furni-scope-tags')).toContainText('Sofa');
   const history = page.getByRole('region', { name: 'Lịch sử hoạt động hỗ trợ' });
   await expect(history.locator('tbody tr')).toHaveCount(10);
+  await history.getByLabel('Tên người thực hiện').fill('Nhân viên');
+  await history.getByLabel('Tìm hoạt động').fill('#HT-1000');
+  await history.getByRole('button', { name: 'Lọc hoạt động' }).click();
+  await history.getByRole('button', { name: 'Phản hồi công khai', exact: true }).click();
+  await expect.poll(() => requests.at(-1)?.get('kind')).toBe('public');
   await history.getByRole('button', { name: 'Sau' }).click();
   await expect(history.locator('tbody tr')).toHaveCount(1);
   await expect(history.getByRole('navigation')).toContainText('Hiển thị 11–11 trên tổng 11 hoạt động');
   expect(Object.fromEntries(requests.at(-1)!)).toEqual({
     preset: 'custom', start: '2026-11-01', end: '2026-11-05', page: '2', group: '2', type: '6',
+    q: '#HT-1000', actor_name: 'Nhân viên', kind: 'public',
   });
-  await page.getByRole('button', { name: 'Đặt lại', exact: true }).click();
+  await page.locator('.report-filters').getByRole('button', { name: 'Đặt lại', exact: true }).click();
   await expect(history.locator('tbody tr')).toHaveCount(10);
   expect(requests.at(-1)?.get('group')).toBeNull();
 });

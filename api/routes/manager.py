@@ -171,8 +171,10 @@ def report_analytics(filters: dict=Depends(analytics_filters), user: UserRespons
 
 @router.get('/reports/activity', response_model=ActivityPage)
 def report_activity(filters: dict=Depends(analytics_filters), page: int=Query(1,ge=1,le=100000),
+                    q: str=Query('',max_length=200), actor_name: str=Query('',max_length=100),
+                    kind: Literal['status','dispatch','public','internal','attachment'] | None=None,
                     user: UserResponse=Depends(manager)):
-    return report_service.report_activity(user.id, page=page, **filters)
+    return report_service.report_activity(user.id, page=page, q=q, actor_name=actor_name, kind=kind, **filters)
 
 
 @router.get('/activity',response_model=ActivityPage)

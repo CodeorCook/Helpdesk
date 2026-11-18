@@ -119,5 +119,5 @@ def analytics(actor, start, end, group_id, type_id):
                 'type_id': str(type_id) if type_id else None}
 
 
-def report_activity(actor, start, end, group_id, type_id, page):
-    return activity(actor, page, 10, start, end, group_id=group_id, type_id=type_id)
+def report_activity(actor, start, end, group_id, type_id, page, q='', actor_name='', kind=None):
+    return activity(actor, page, 10, start, end, q=q, actor_name=actor_name, kind=kind, group_id=group_id, type_id=type_id)
