@@ -1,10 +1,12 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from schemas.customer import TicketCancel, StrictInput, TicketCreate, TicketResponse, MessageCreate, AttachmentResponse, HistoryResponse
 
 
 class StaffTicket(TicketResponse):
+    sla_id: str | None = None
+    sla_phase: str = "legacy"
     group_id: str | None
     group_name: str | None
     assigned_id: str | None
@@ -48,6 +50,7 @@ class StaffCreate(TicketCreate):
 
 
 class StaffApprove(TicketCreate):
+    confirm_legacy_sla_replacement: bool = False
     priority_id: int = Field(gt=0, le=32767)
     expected_updated_at: datetime
 
@@ -57,6 +60,8 @@ class StaffReject(TicketCancel):
 
 
 class RequestSnapshot(BaseModel):
+    sla_id_before_review: str | None = None
+    sla_phase_before_review: str | None = None
     title: str
     description: str
     type_id: str | None
@@ -116,7 +121,38 @@ class StaffMessageResponse(BaseModel):
     created_at: datetime
 
 
+class EscalationRequest(StrictInput):
+    reason: str = Field(min_length=1,max_length=2000)
+    expected_updated_at: datetime
+
+    @field_validator('reason')
+    @classmethod
+    def nonblank(cls,value):
+        if not value.strip():raise ValueError('Vui lòng mô tả cụ thể lý do điều phối.')
+        return value.strip()
+
+
+class Escalation(BaseModel):
+    id: str
+    ticket_id: str
+    requester_id: str
+    requester: str
+    source_group_id: str
+    source_group: str
+    reason: str
+    created_at: datetime
+    status: Literal['CHO_XU_LY','DA_DIEU_PHOI','TU_CHOI']
+    handled_at: datetime | None
+    outcome: str | None
+    manager: str | None
+    assigned_to: str | None
+    assigned_id: str | None
+    result_assignment_id: str | None
+
+
 class StaffDetail(StaffTicket):
+    escalation_available: bool = False
+    escalations: list[Escalation] = Field(default_factory=list)
     request_snapshot: RequestSnapshot | None = None
     customer: Person
     messages: list[StaffMessageResponse]

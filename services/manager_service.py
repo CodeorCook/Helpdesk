@@ -5,13 +5,13 @@ from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 from psycopg import sql
 from psycopg.rows import dict_row
-from psycopg.errors import UniqueViolation
+from psycopg.errors import UniqueViolation, ForeignKeyViolation
 from core.database import get_connection, database_schema
 from core.security import PASSWORD_HASHER, verify_password
 from core.coordination import lock_operations
 from core.audit import record
 from core.uploads import safe_path
-from core.sla import attach_sla
+from core.sla import attach_sla, lock_sla_priority
 from core.manager_limits import role_confirmation
 from services import staff_service as staff
 from services.auth_service import ROLES
@@ -20,7 +20,11 @@ TABLES=(*staff.TABLES,'quan_tri_vien')
 
 
 def execute(cur,statement,params=()):
-    cur.execute(sql.SQL(statement).format(**{t:sql.Identifier(database_schema(),t) for t in (*TABLES, 'account_lock_event')}),params)
+    identifiers={t:sql.Identifier(database_schema(),t) for t in (*TABLES,'account_lock_event','nhom_loai_ho_tro')}
+    if '{yeu_cau_dieu_phoi_phieu}' in statement:
+        from services.escalation_service import request_schema
+        identifiers['yeu_cau_dieu_phoi_phieu']=sql.Identifier(request_schema(),'yeu_cau_dieu_phoi_phieu')
+    cur.execute(sql.SQL(statement).format(**identifiers),params)
 
 
 @contextmanager
@@ -36,6 +40,8 @@ def manager_cursor(user_id,mutation=False):
         if exc.diag.constraint_name == 'uq_sla_muc_uu_tien_dang_dung':
             raise HTTPException(409, 'Mức ưu tiên này đã có chính sách SLA có hiệu lực. Hãy tắt chính sách hiện tại trước khi bật chính sách khác.') from exc
         raise HTTPException(409,'Dữ liệu trùng hoặc cấu hình đang có hiệu lực đã tồn tại. Hãy làm mới để kiểm tra.') from exc
+    except ForeignKeyViolation as exc:
+        raise HTTPException(409, 'Dữ liệu đang được tham chiếu. Hãy ngừng hoạt động thay vì xóa.') from exc
     for action,target in events:record(user_id,action,target)
 
 
@@ -176,6 +182,14 @@ def ticket_trend(cur, unit, step):
     return cur.fetchall()
 
 
+SLA_DUE = "CASE WHEN p.sla_ma IS NOT NULL THEN LEAST(p.han_xu_ly, CASE WHEN p.ngay_phan_hoi_dau IS NULL THEN p.han_phan_hoi END) END"
+DASHBOARD_SEGMENT = f"""CASE
+    WHEN t.ma IN ('MOI','DANG_XU_LY','TAM_DUNG') AND {SLA_DUE}<now() THEN 'overdue'
+    WHEN t.ma IN ('DANG_XU_LY','TAM_DUNG') THEN 'processing'
+    WHEN t.ma IN ('DA_GIAI_QUYET','DA_DONG') THEN 'closed'
+    WHEN t.ma='MOI' THEN 'waiting' ELSE 'other' END"""
+
+
 def overview(actor, *, include_trends=False, **options):
     where,params=filters(**options)
     with manager_cursor(actor) as (cur,_):
@@ -188,6 +202,14 @@ def overview(actor, *, include_trends=False, **options):
             result[key]=cur.fetchall()
         for key,table in [('users','nguoi_dung'),('groups','nhom_ho_tro')]:
             execute(cur,'SELECT count(*) n FROM {'+table+'}');result[key]=cur.fetchone()['n']
+        execute(cur, 'SELECT ' + DASHBOARD_SEGMENT + ' code,count(*) count' + staff.FROM + where +
+                ' GROUP BY 1 ORDER BY 1', params)
+        result['segments'] = cur.fetchall()
+        execute(cur, """SELECT COALESCE(g.ten,'Chưa xác định nhóm') name,count(*) count""" + staff.FROM +
+                where + " AND t.ma IN ('DANG_XU_LY','TAM_DUNG') GROUP BY g.nhom_ma,g.ten ORDER BY count DESC,name", params)
+        result['workload'] = cur.fetchall()
+        result['period_start'] = options.get('from_date')
+        result['period_end'] = options.get('to_date')
         return result
 
 
@@ -207,7 +229,13 @@ def groups(actor,page=1,page_size=20):
     with manager_cursor(actor) as (cur,_):
         execute(cur,'SELECT count(*) total FROM {nhom_ho_tro}');total=cur.fetchone()['total']
         execute(cur,GROUP_VIEW+' ORDER BY g.nhom_ma LIMIT %s OFFSET %s',(page_size,(page-1)*page_size))
-        return dict(items=cur.fetchall(),total=total,page=page,page_size=page_size)
+        rows=cur.fetchall()
+        from services.support_type_service import expertise_table
+        relation=expertise_table(cur)
+        execute(cur,'SELECT nhom_ma::text id,count(*) total FROM {'+relation+'} GROUP BY nhom_ma')
+        counts={row['id']:row['total'] for row in cur.fetchall()}
+        for row in rows:row['type_count']=counts.get(row['id'],0)
+        return dict(items=rows,total=total,page=page,page_size=page_size)
 
 
 def group_detail(actor,group_id):
@@ -218,7 +246,10 @@ def group_detail(actor,group_id):
           (SELECT count(*) FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma) WHERE p.nhan_vien_phu_trach_ma=n.nd_ma AND NOT t.la_ket_thuc AND t.ma<>'DA_GIAI_QUYET') workload
           FROM {thanh_vien_nhom} m JOIN {nguoi_dung} n ON n.nd_ma=m.nhan_vien_ma WHERE m.nhom_ma=%s ORDER BY n.nd_ma''',(group_id,));group['people']=cur.fetchall()
         add_memberships(cur, group['people'])
-        execute(cur,'SELECT l.ht_ma::text id,l.ten name FROM {xu_ly_mac_dinh} x JOIN {loai_ho_tro} l USING(ht_ma) WHERE x.nhom_ma=%s ORDER BY l.ht_ma',(group_id,));group['types']=cur.fetchall()
+        from services.support_type_service import expertise_table
+        relation=expertise_table(cur)
+        execute(cur,'SELECT l.ht_ma::text id,l.ten name FROM {'+relation+'} x JOIN {loai_ho_tro} l USING(ht_ma) WHERE x.nhom_ma=%s ORDER BY l.ht_ma',(group_id,));group['types']=cur.fetchall()
+        group['type_count']=len(group['types'])
         return group
 
 
@@ -338,9 +369,15 @@ def update_routing(actor, type_id, body):
         group = group_row(cur, body.group_id, True)
         if not group['active']:
             raise HTTPException(422, 'Nhóm đích phải đang hoạt động.')
-        execute(cur, 'SELECT count(*) AS total FROM {xu_ly_mac_dinh} WHERE nhom_ma=%s', (body.group_id,))
-        if cur.fetchone()['total'] >= MAX_GROUP_TYPES:
-            raise HTTPException(409, 'Nhóm đích đã đủ 2 loại yêu cầu.')
+        from services.support_type_service import available, add_expertise
+        if available(cur):
+            if not ticket_type['dang_hoat_dong']:
+                raise HTTPException(409, 'Loại hỗ trợ đã ngừng hoạt động; không thiết lập mặc định mới.')
+            add_expertise(cur, body.group_id, type_id)
+        else:
+            execute(cur, 'SELECT count(*) AS total FROM {xu_ly_mac_dinh} WHERE nhom_ma=%s', (body.group_id,))
+            if cur.fetchone()['total'] >= MAX_GROUP_TYPES:
+                raise HTTPException(409, 'Nhóm đích đã đủ 2 loại yêu cầu.')
         execute(cur, '''INSERT INTO {xu_ly_mac_dinh}(ht_ma,nhom_ma) VALUES(%s,%s)
                         ON CONFLICT(ht_ma) DO UPDATE SET nhom_ma=EXCLUDED.nhom_ma''', (type_id, body.group_id))
         events.append(('routing.update', type_id))
@@ -409,11 +446,33 @@ def filters(search='',type_id=None,status=None,priority=None,from_date=None,to_d
     return ' WHERE '+' AND '.join(conditions),params
 
 
-def tickets(actor,page=1,page_size=10,**options):
-    where,params=filters(**options)
+def tickets(actor,page=1,page_size=10,*,dashboard_segment=None,sort=None,urgent_only=False,**options):
+    from services import escalation_service as escalation
     with manager_cursor(actor) as (cur,_):
+        configured=escalation.available(cur)
+        if urgent_only and not configured:escalation.require_schema(cur)
+        pending="EXISTS(SELECT 1 FROM {yeu_cau_dieu_phoi_phieu} e WHERE e.phieu_ma=p.phieu_ma AND e.trang_thai='CHO_XU_LY')" if configured else 'false'
+        if urgent_only:
+            options={**options,'from_date':None,'to_date':None}
+        period={k:options.get(k) for k in ('from_date','to_date')}
+        # The attention list includes pending escalations from older cohorts, while KPIs stay period-scoped.
+        if dashboard_segment=='attention' and not urgent_only:
+            rest={**options,'from_date':None,'to_date':None}
+            where,params=filters(**rest)
+            period_where,period_params=filters(**period)
+            where+=' AND (('+period_where.removeprefix(' WHERE ')+') OR '+pending+')'
+            params+=period_params
+        else:where,params=filters(**options)
+        if urgent_only:where+=' AND '+pending
+        elif dashboard_segment and dashboard_segment!='attention':
+            where+=' AND ('+DASHBOARD_SEGMENT+')=%s';params.append(dashboard_segment)
+        elif dashboard_segment=='attention':where+=" AND (t.ma IN ('MOI','DANG_XU_LY','TAM_DUNG') OR "+pending+')'
+        order='p.ngay_cap_nhat DESC,p.phieu_ma DESC'
+        if sort=='intervention':
+            order=f"CASE WHEN {pending} THEN -1 WHEN {SLA_DUE}<now() THEN 0 WHEN p.nhan_vien_phu_trach_ma IS NULL THEN 1 WHEN {SLA_DUE}<=now()+interval '60 minutes' THEN 2 ELSE 3 END,u.thu_tu DESC,{SLA_DUE} ASC NULLS LAST,p.ngay_tao,p.phieu_ma"
         execute(cur,'SELECT count(*) total'+staff.FROM+where,params);total=cur.fetchone()['total']
-        execute(cur,staff.VIEW+where+' ORDER BY p.ngay_cap_nhat DESC,p.phieu_ma DESC LIMIT %s OFFSET %s',params+[page_size,(page-1)*page_size]);rows=cur.fetchall()
+        execute(cur,staff.VIEW+where+' ORDER BY '+order+' LIMIT %s OFFSET %s',params+[page_size,(page-1)*page_size]);rows=cur.fetchall()
+        escalation.enrich_manager(cur,rows)
         return dict(items=[staff.decorate(r) for r in rows],total=total,page=page,page_size=page_size)
 
 
@@ -429,6 +488,9 @@ def ticket_detail(actor,ticket_id):
         execute(cur,'''SELECT h.pc_ma::text id,n.ho_ten employee,h.bat_dau started_at,h.ket_thuc ended_at
           FROM {lich_su_phan_cong} h JOIN {nguoi_dung} n ON n.nd_ma=h.nhan_vien_ma WHERE h.phieu_ma=%s ORDER BY h.bat_dau,h.pc_ma''',(ticket_id,));ticket['assignments']=cur.fetchall()
         active=staff.active_assignment(cur,ticket_id);ticket['assignment_id']=str(active['pc_ma']) if active else None
+        from services import escalation_service
+        ticket['escalation_available']=escalation_service.available(cur)
+        ticket['escalations']=escalation_service.history(cur,ticket_id)
         ticket['can_process']=False;ticket['routing_warning']=None
         return ticket
 
@@ -452,7 +514,23 @@ def assign(actor,ticket_id,body):
     with manager_cursor(actor,True) as (cur,events):
         ticket=ticket_row(cur,ticket_id,True);check_version(ticket,body.expected_updated_at)
         if ticket['status'] not in ('MOI','DANG_XU_LY','TAM_DUNG'):raise HTTPException(409,'Chỉ điều phối phiếu mới/đang xử lý/tạm dừng. Giữ bước khách xác nhận đóng.')
+        from services import escalation_service as escalation
+        pending=escalation.pending(cur,ticket_id,True)
+        if (pending['yc_ma'] if pending else None)!=body.expected_escalation_id:
+            raise HTTPException(409,'Yêu cầu điều phối đã thay đổi. Hãy mở lại popup để xác nhận.')
+        if pending and body.employee_id is None:
+            raise HTTPException(422,'Điều phối khẩn cần nhân viên đích cụ thể; không đưa phiếu đã lập về MOI.')
+        if pending and ticket['group_id']!=str(body.group_id):
+            from services.support_type_service import expertise_table
+            relation=expertise_table(cur)
+            execute(cur,'SELECT 1 FROM {'+relation+'} WHERE nhom_ma=%s AND ht_ma=%s',(body.group_id,ticket['type_id']))
+            if cur.fetchone() is None:raise HTTPException(422,'Nhóm đích chưa có chuyên môn xử lý loại hỗ trợ của phiếu.')
         previous=staff.active_assignment(cur,ticket_id)
+        if body.employee_id is None:
+            execute(cur,'SELECT EXISTS(SELECT 1 FROM {lich_su_phan_cong} WHERE phieu_ma=%s) seen',(ticket_id,))
+            seen=cur.fetchone()['seen']
+            if ticket['status']!='MOI' or ticket.get('sla_phase')=='official' or seen:
+                raise HTTPException(422,'Phiếu đã lập cần nhân viên đích cụ thể; không đưa về MOI để xét duyệt lại.')
         if (previous['pc_ma'] if previous else None)!=body.expected_assignment_id:raise HTTPException(409,'Phân công đã thay đổi. Hãy làm mới phiếu.')
         if bool(ticket['assigned_id'])!=bool(previous) or (previous and str(previous['nhan_vien_ma'])!=ticket['assigned_id']):raise HTTPException(409,'Phân công hiện tại không nhất quán; cần kiểm tra trước khi điều phối.')
         group=group_row(cur,body.group_id,True)
@@ -466,6 +544,10 @@ def assign(actor,ticket_id,body):
         execute(cur,'UPDATE {phieu_ho_tro} SET nhom_ma=%s,nhan_vien_phu_trach_ma=%s WHERE phieu_ma=%s',(body.group_id,body.employee_id,ticket_id))
         target='DANG_XU_LY' if body.employee_id is not None and ticket['status']=='MOI' else 'MOI' if body.employee_id is None else ticket['status']
         if target!=ticket['status']:status_history(cur,actor,ticket_id,ticket['status'],target,body.reason)
+        if pending:
+            assignment=staff.active_assignment(cur,ticket_id)
+            escalation.finish(cur,pending['yc_ma'],actor,body.reason,assignment['pc_ma'])
+            events.append(('escalation.assign',pending['yc_ma']))
         events.append(('ticket.assign',ticket_id));return ticket_row(cur,ticket_id)
 
 
@@ -485,7 +567,9 @@ def download(actor,ticket_id,attachment_id):
 
 POLICY_VIEW='''SELECT s.sla_ma::text id,s.ten name,s.mdut_ma priority_id,u.ten priority,
  s.thoi_gian_phan_hoi_phut response_minutes,s.thoi_gian_xu_ly_phut resolution_minutes,s.dang_hoat_dong active,
- (SELECT count(*) FROM {phieu_ho_tro} p WHERE p.sla_ma=s.sla_ma) referenced
+ (SELECT count(*) FROM {phieu_ho_tro} p WHERE p.sla_ma=s.sla_ma
+    OR to_jsonb(p)->'yeu_cau_goc'->>'sla_id_before_review'=s.sla_ma::text
+    OR (to_jsonb(p)->'yeu_cau_goc'->'_sla_used_ids') ? s.sla_ma::text) referenced
  FROM {chinh_sach_sla} s JOIN {muc_do_uu_tien} u USING(mdut_ma)'''
 
 
@@ -509,15 +593,46 @@ def save_policy(actor,body,policy_id=None):
     with manager_cursor(actor,True) as (cur,events):
         execute(cur,'SELECT mdut_ma FROM {muc_do_uu_tien} WHERE mdut_ma=%s',(body.priority_id,))
         if cur.fetchone() is None:raise HTTPException(422,'Mức ưu tiên không hợp lệ.')
+        prior = policy_row(cur,policy_id) if policy_id is not None else None
+        for priority in sorted({body.priority_id, *([prior['priority_id']] if prior else [])}):
+            lock_sla_priority(cur, priority)
         values=(body.name,body.priority_id,body.response_minutes,body.resolution_minutes,body.active)
-        if policy_id is not None:
+        if prior:
             current=policy_row(cur,policy_id,True)
             if any(current[k]!=v for k,v in body.expected.model_dump().items()):raise HTTPException(409,'Chính sách đã thay đổi. Hãy làm mới.')
-            if current['referenced'] and any(current[k]!=getattr(body,k) for k in ['name','priority_id','response_minutes','resolution_minutes']):raise HTTPException(409,'Chính sách đã được phiếu tham chiếu: chỉ bật/tắt hiệu lực. Hãy tạo phiên bản mới để giữ lịch sử và deadline cũ.')
+            if current['referenced'] and any(current[k]!=getattr(body,k) for k in ['name','priority_id','response_minutes','resolution_minutes']):
+                raise HTTPException(409,'Chính sách đã có phiếu tham chiếu. Hãy tạo phiên bản mới để bảo toàn lịch sử.')
+            if current['active'] != body.active:
+                raise HTTPException(409,'Hãy dùng thao tác Khóa/Kích hoạt có xác nhận để thay đổi hiệu lực.')
+            if current['active'] and current['priority_id'] != body.priority_id:
+                raise HTTPException(409,'Không chuyển mức ưu tiên của bản đang áp dụng. Hãy tạo phiên bản mới.')
             execute(cur,'UPDATE {chinh_sach_sla} SET ten=%s,mdut_ma=%s,thoi_gian_phan_hoi_phut=%s,thoi_gian_xu_ly_phut=%s,dang_hoat_dong=%s WHERE sla_ma=%s',(*values,policy_id))
         else:
             execute(cur,'INSERT INTO {chinh_sach_sla}(ten,mdut_ma,thoi_gian_phan_hoi_phut,thoi_gian_xu_ly_phut,dang_hoat_dong) VALUES(%s,%s,%s,%s,%s) RETURNING sla_ma',values);policy_id=cur.fetchone()['sla_ma']
-        events.append(('sla.update' if hasattr(body,'expected') else 'sla.create',policy_id));return policy_row(cur,policy_id)
+        events.append(('sla.update' if prior else 'sla.create',policy_id));return policy_row(cur,policy_id)
+
+
+def policy_state(actor, policy_id, body):
+    with manager_cursor(actor,True) as (cur,events):
+        prior=policy_row(cur,policy_id)
+        lock_sla_priority(cur,prior['priority_id'])
+        current=policy_row(cur,policy_id,True)
+        if any(current[k]!=v for k,v in body.expected.model_dump().items()):
+            raise HTTPException(409,'Chính sách đã thay đổi. Hãy mở lại thao tác để xác nhận dữ liệu mới.')
+        execute(cur,'SELECT sla_ma FROM {chinh_sach_sla} WHERE mdut_ma=%s AND dang_hoat_dong FOR UPDATE',(current['priority_id'],))
+        existing=cur.fetchone(); active_id=existing['sla_ma'] if existing else None
+        if active_id != body.expected_active_id:
+            raise HTTPException(409,'Phiên bản đang áp dụng đã thay đổi. Hãy tải lại trước khi xác nhận.')
+        if current['active'] == body.active:
+            raise HTTPException(409,'Chính sách đã ở trạng thái này.')
+        if not body.active:
+            raise HTTPException(409,'Không khóa đơn lẻ SLA đang áp dụng vì sẽ thiếu chính sách. Hãy tạo bản mới rồi kích hoạt thay thế.')
+        if active_id is not None:
+            execute(cur,'UPDATE {chinh_sach_sla} SET dang_hoat_dong=false WHERE sla_ma=%s',(active_id,))
+            events.append(('sla.lock',active_id))
+        execute(cur,'UPDATE {chinh_sach_sla} SET dang_hoat_dong=true WHERE sla_ma=%s',(policy_id,))
+        events.append(('sla.activate',policy_id))
+        return policy_row(cur,policy_id)
 
 
 def apply_sla(actor,ticket_id,body):

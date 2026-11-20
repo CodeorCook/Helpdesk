@@ -16,7 +16,7 @@ from core.coordination import lock_operations
 from core.audit import record
 from services.email_service import enqueue
 
-TABLES = ("nguoi_dung", "khach_hang", "phieu_ho_tro", "loai_ho_tro", "muc_do_uu_tien", "trang_thai", "lich_su_trang_thai", "lich_su_phan_cong", "tin_nhan", "tep_dinh_kem", "danh_gia")
+TABLES = ("nguoi_dung", "khach_hang", "phieu_ho_tro", "loai_ho_tro", "muc_do_uu_tien", "trang_thai", "lich_su_trang_thai", "lich_su_phan_cong", "tin_nhan", "tep_dinh_kem", "danh_gia", "chinh_sach_sla")
 
 
 def execute(cur, statement, params=()):
@@ -38,6 +38,8 @@ def customer_cursor(user_id,lock_user=False,coordinate=False):
 
 
 TICKET_VIEW = """SELECT p.phieu_ma::text AS id,p.tieu_de AS title,p.mo_ta AS description,
+    p.sla_ma::text AS sla_id,s.ten AS sla_name,p.han_phan_hoi AS response_due,p.han_xu_ly AS resolution_due,
+    COALESCE(to_jsonb(p)->'yeu_cau_goc'->>'_sla_phase',CASE WHEN t.ma='MOI' THEN 'legacy' ELSE 'official' END) AS sla_phase,
     p.ht_ma::text AS type_id,l.ten AS type_name,t.ma AS status,
     CASE WHEN to_jsonb(p)->>'ket_thuc_loai'='TU_CHOI_YEU_CAU' THEN 'Đã đóng – Không tiếp nhận' ELSE t.ten END AS status_label,
     to_jsonb(p)->>'ket_thuc_loai' AS termination_kind,u.ten AS priority,
@@ -54,6 +56,7 @@ TICKET_VIEW = """SELECT p.phieu_ma::text AS id,p.tieu_de AS title,p.mo_ta AS des
         ORDER BY h.thoi_diem DESC,h.ls_ma DESC LIMIT 1),false)) AS closed_by_customer
     FROM {phieu_ho_tro} p JOIN {trang_thai} t ON t.tt_ma=p.tt_ma
     JOIN {muc_do_uu_tien} u ON u.mdut_ma=p.mdut_ma LEFT JOIN {loai_ho_tro} l ON l.ht_ma=p.ht_ma
+    LEFT JOIN {chinh_sach_sla} s ON s.sla_ma=p.sla_ma
     LEFT JOIN {nguoi_dung} n ON n.nd_ma=p.nhan_vien_phu_trach_ma """
 
 
@@ -101,7 +104,7 @@ def create_ticket_in_transaction(cur, user_id, body: TicketCreate):
         (user_id, "KHACH_HANG", priority["mdut_ma"], body.type_id, status["tt_ma"], body.title, body.description))
     ticket_id = cur.fetchone()["phieu_ma"]
     add_history(cur, ticket_id, None, status["tt_ma"], user_id)
-    attach_sla(cur,ticket_id)
+    attach_sla(cur,ticket_id,provisional=True)
     enqueue(cur, ticket_id, "created")
     return ticket_row(cur, user_id, ticket_id)
 
@@ -174,7 +177,7 @@ def detail(user_id, ticket_id):
 
 
 def locked_ticket(cur, user_id, ticket_id):
-    execute(cur, """SELECT p.phieu_ma,p.tt_ma,t.ma FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma)
+    execute(cur, """SELECT p.phieu_ma,p.tt_ma,p.ht_ma,t.ma FROM {phieu_ho_tro} p JOIN {trang_thai} t USING(tt_ma)
         WHERE p.phieu_ma=%s AND p.khach_hang_ma=%s FOR UPDATE OF p""", (ticket_id,user_id))
     row = cur.fetchone()
     if row is None:
@@ -191,8 +194,8 @@ def require_pending_request(cur, user_id, ticket_id, action):
 
 def edit_ticket(user_id, ticket_id, body):
     with customer_cursor(user_id, coordinate=True) as cur:
-        require_pending_request(cur, user_id, ticket_id, "sửa")
-        execute(cur, "SELECT 1 FROM {loai_ho_tro} WHERE ht_ma=%s AND dang_hoat_dong", (body.type_id,))
+        current = require_pending_request(cur, user_id, ticket_id, "sửa")
+        execute(cur, "SELECT 1 FROM {loai_ho_tro} WHERE ht_ma=%s AND (dang_hoat_dong OR ht_ma=%s) FOR SHARE", (body.type_id,current["ht_ma"]))
         if cur.fetchone() is None:
             raise HTTPException(422, "Loại hỗ trợ không còn hoạt động.")
         execute(cur, """UPDATE {phieu_ho_tro}

@@ -327,3 +327,10 @@ a.sd-kpi:hover{transform:translateY(-2px);box-shadow:0 10px 24px var(--shadow);b
 @media(max-width:760px){.sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.sd-metrics{grid-template-columns:1fr}.sd-card-head{flex-direction:column}}
 @media(max-width:520px){.sd-kpis{grid-template-columns:1fr}.sd-toolbar{align-items:stretch}.sd-segment{width:100%;overflow-x:auto}.sd-segment button{flex:1}.sd-btn{flex:1;justify-content:center}.sd-head h1{font-size:26px}.sd-card{padding:18px}}
 @media(prefers-reduced-motion:reduce){.sd-spin{animation:none}.sd-kpi,.sd-donut-seg{transition:none}}
+.staff-sla-preview{display:grid;gap:8px;margin-block:12px;min-width:0}
+.staff-sla-preview p{margin:0}
+.staff-sla-preview .button{justify-self:start;max-width:100%;white-space:normal}
+.staff-escalate-button{border-color:#c27424;color:var(--ink);white-space:normal}
+.staff-escalation-pending{background:color-mix(in srgb,#e89b38 15%,var(--surface));color:var(--ink);border:1px solid #c27424}
+.staff-escalation-result{padding-block:12px;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+.staff-escalation-result small{display:block;color:var(--muted)}

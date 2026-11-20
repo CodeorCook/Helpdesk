@@ -43,7 +43,8 @@ VIEW = '''SELECT p.phieu_ma::text id,p.tieu_de title,p.mo_ta description,p.ht_ma
  t.ma status,t.ten status_label,u.ten priority,u.thu_tu priority_rank,p.mdut_ma::text priority_id,p.ngay_tao created_at,
  p.ngay_cap_nhat updated_at,p.ngay_dong closed_at,n.ho_ten assigned_to,p.nhan_vien_phu_trach_ma::text assigned_id,
  g.nhom_ma::text group_id,g.ten group_name,s.ten sla_name,p.han_phan_hoi response_due,p.han_xu_ly resolution_due,
- p.ngay_phan_hoi_dau first_response_at,p.ngay_giai_quyet resolved_at''' + FROM
+ p.ngay_phan_hoi_dau first_response_at,p.ngay_giai_quyet resolved_at,p.sla_ma::text sla_id,
+ COALESCE(to_jsonb(p)->'yeu_cau_goc'->>'_sla_phase',CASE WHEN t.ma='MOI' THEN 'legacy' ELSE 'official' END) sla_phase''' + FROM
 
 
 def sla(row):
@@ -254,25 +255,30 @@ def approve(user_id, ticket_id, body):
     try:
         with staff_cursor(user_id, mutation=True) as cur:
             ticket = review_pending(cur, user_id, ticket_id, body.expected_updated_at)
-            valid_classification(cur, body.type_id, body.priority_id)
+            valid_classification(cur, body.type_id, body.priority_id, ticket['type_id'])
             if str(body.type_id) != ticket['type_id']:
                 execute(cur, 'SELECT nhom_ma::text id FROM {xu_ly_mac_dinh} WHERE ht_ma=%s', (body.type_id,))
                 destination = cur.fetchone()
                 if not destination or destination['id'] != ticket['group_id']:
                     raise HTTPException(422, 'Loại hỗ trợ thuộc phạm vi khác hoặc chưa có nhóm. Vui lòng liên hệ Quản lý để điều phối.')
+            if ticket['sla_id'] and ticket['sla_phase']=='legacy' and not body.confirm_legacy_sla_replacement:
+                raise HTTPException(409,'Yêu cầu cũ chưa xác định SLA tạm tính/chính thức. Cần xác nhận rõ trước khi thay SLA qua xét duyệt.')
             snapshot = {key: ticket[key] for key in (
                 'title', 'description', 'type_id', 'type_name', 'priority_id', 'sla_name',
                 'response_due', 'resolution_due', 'sla_state',
             )}
             for key in ('response_due', 'resolution_due'):
                 snapshot[key] = snapshot[key].isoformat() if snapshot[key] else None
+            snapshot['sla_id_before_review']=ticket['sla_id']
+            snapshot['sla_phase_before_review']=ticket['sla_phase']
+            snapshot['_sla_phase']='official'
             snapshot['captured_at'] = datetime.now(timezone.utc).isoformat()
             execute(cur, """UPDATE {phieu_ho_tro}
-                SET yeu_cau_goc=COALESCE(yeu_cau_goc,%s),tieu_de=%s,mo_ta=%s,ht_ma=%s,mdut_ma=%s,
+                SET yeu_cau_goc=CASE WHEN yeu_cau_goc ? 'title' THEN yeu_cau_goc || jsonb_build_object('_sla_phase','official','sla_id_before_review',COALESCE(yeu_cau_goc->'sla_id_before_review',to_jsonb(sla_ma)),'sla_phase_before_review',COALESCE(yeu_cau_goc->>'sla_phase_before_review','legacy')) ELSE COALESCE(yeu_cau_goc,'{{}}'::jsonb) || %s END,tieu_de=%s,mo_ta=%s,ht_ma=%s,mdut_ma=%s,
                     nhan_vien_phu_trach_ma=%s,nhom_ma=%s,sla_ma=NULL,han_phan_hoi=NULL,han_xu_ly=NULL
                 WHERE phieu_ma=%s""", (Jsonb(snapshot), body.title, body.description, body.type_id,
                 body.priority_id, user_id, ticket['group_id'], ticket_id))
-            attach_sla(cur, ticket_id)
+            attach_sla(cur, ticket_id, required=True)
             execute(cur, """INSERT INTO {lich_su_phan_cong}(phieu_ma,nhan_vien_ma,nguoi_phan_cong_ma)
                 VALUES (%s,%s,%s)""", (ticket_id, user_id, user_id))
             change_status(cur, user_id, ticket_id, 'MOI', 'DANG_XU_LY')
@@ -290,7 +296,7 @@ def reject(user_id, ticket_id, body):
             review_pending(cur, user_id, ticket_id, body.expected_updated_at)
             execute(cur, """SELECT 1 FROM {lich_su_phan_cong} WHERE phieu_ma=%s
                 UNION ALL SELECT 1 FROM {phieu_ho_tro} p WHERE p.phieu_ma=%s
-                AND (p.ngay_giai_quyet IS NOT NULL OR to_jsonb(p)->>'yeu_cau_goc' IS NOT NULL) LIMIT 1""",
+                AND (p.ngay_giai_quyet IS NOT NULL OR (to_jsonb(p)->'yeu_cau_goc') ? 'title') LIMIT 1""",
                 (ticket_id, ticket_id))
             if cur.fetchone():
                 raise HTTPException(409, 'Phiếu từng được phân công hoặc phê duyệt, không thể từ chối như yêu cầu mới.')
@@ -314,8 +320,8 @@ def customers(user_id, search):
         return cur.fetchall()
 
 
-def valid_classification(cur, type_id, priority_id):
-    execute(cur,'SELECT ht_ma FROM {loai_ho_tro} WHERE ht_ma=%s AND dang_hoat_dong FOR SHARE',(type_id,))
+def valid_classification(cur, type_id, priority_id, existing_type_id=None):
+    execute(cur,'SELECT ht_ma FROM {loai_ho_tro} WHERE ht_ma=%s AND (dang_hoat_dong OR ht_ma=%s) FOR SHARE',(type_id,existing_type_id))
     if cur.fetchone() is None: raise HTTPException(422,'Loại hỗ trợ không hợp lệ hoặc đã ngừng sử dụng.')
     execute(cur,'SELECT mdut_ma FROM {muc_do_uu_tien} WHERE mdut_ma=%s',(priority_id,))
     if cur.fetchone() is None: raise HTTPException(422,'Mức ưu tiên không hợp lệ.')
@@ -331,7 +337,7 @@ def create_ticket(user_id, body):
         execute(cur,"""INSERT INTO {phieu_ho_tro}(khach_hang_ma,nguoi_lap_ma,nguon_tao,mdut_ma,ht_ma,tt_ma,tieu_de,mo_ta)
             VALUES(%s,%s,'NHAN_VIEN',%s,%s,%s,%s,%s) RETURNING phieu_ma::text id""",(body.customer_id,user_id,body.priority_id,body.type_id,state['tt_ma'],body.title,body.description))
         ticket_id=cur.fetchone()['id'];customer.add_history(cur,ticket_id,None,state['tt_ma'],user_id)
-        attach_sla(cur,ticket_id)
+        attach_sla(cur,ticket_id,provisional=True)
         # Creation is distinct from accepting. Caller gets only a receipt if routed outside their groups.
         return {'id':ticket_id,'message':'Đã lập phiếu mới thay khách hàng. Phiếu đang chờ tiếp nhận; chưa phân công.'}
 
@@ -374,7 +380,11 @@ def detail(user_id,ticket_id):
     with staff_cursor(user_id) as cur:
         ticket=row(cur,user_id,ticket_id)
         execute(cur, "SELECT to_jsonb(p)->'yeu_cau_goc' AS snapshot FROM {phieu_ho_tro} p WHERE phieu_ma=%s", (ticket_id,))
-        ticket['request_snapshot'] = cur.fetchone()['snapshot']
+        snapshot=cur.fetchone()['snapshot']
+        ticket['request_snapshot'] = snapshot if snapshot and 'title' in snapshot else None
+        from services import escalation_service
+        ticket['escalation_available']=escalation_service.available(cur)
+        ticket['escalations']=escalation_service.history(cur,ticket_id)
         execute(cur,'SELECT n.nd_ma::text id,n.ho_ten name FROM {phieu_ho_tro} p JOIN {nguoi_dung} n ON n.nd_ma=p.khach_hang_ma WHERE p.phieu_ma=%s',(ticket_id,));ticket['customer']=cur.fetchone()
         execute(cur,'''SELECT m.tn_ma::text id,n.ho_ten sender,m.noi_dung content,m.la_ghi_chu_noi_bo internal,m.thoi_gian created_at
             FROM {tin_nhan} m JOIN {nguoi_dung} n ON n.nd_ma=m.nguoi_gui_ma WHERE m.phieu_ma=%s ORDER BY m.thoi_gian DESC,m.tn_ma DESC LIMIT 201''',(ticket_id,))

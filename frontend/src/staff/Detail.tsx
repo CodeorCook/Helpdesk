@@ -1,3 +1,4 @@
+import {EscalationPanel,EscalationHistory,type Escalation} from './EscalationPanel';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
@@ -8,6 +9,8 @@ import { formatDate } from '../customer/api';
 import { staffApi, type StaffTicket } from './api';
 
 type Detail = StaffTicket & {
+  escalation_available?:boolean;
+  escalations?:Escalation[];
   customer: { id: string; name: string };
   can_process: boolean;
   routing_warning: string | null;
@@ -33,6 +36,7 @@ function TicketDetail({ id }: { id: string }) {
   const location = useLocation();
   const [data, setData] = useState<Detail>();
   const [error, setError] = useState('');
+  const [ownEscalations,setOwnEscalations]=useState<Escalation[]>([]);
   const [notice, setNotice] = useState('');
   const [nextStatus, setNextStatus] = useState<Transition | ''>('');
   const [statusError, setStatusError] = useState('');
@@ -44,9 +48,11 @@ function TicketDetail({ id }: { id: string }) {
     const version = ++loadVersion.current;
     try {
       const result = await staffApi<Detail>(`/tickets/${id}`);
-      if (version === loadVersion.current) { setData(result); setError(''); }
+      if (version === loadVersion.current) { setData(result); setOwnEscalations([]); setError(''); }
     } catch (e) {
-      if (version === loadVersion.current) { setData(undefined); setError((e as Error).message); }
+      if (version === loadVersion.current) { setData(undefined); setError((e as Error).message);
+        try{const history=await staffApi<Escalation[]>(`/tickets/${id}/escalations`);if(version===loadVersion.current){setOwnEscalations(history);if(history.length)setError('');}}catch{/* No escalation access does not grant ticket access. */}
+      }
     }
   }, [id]);
   useEffect(() => { void load(); return () => { loadVersion.current++; }; }, [load]);
@@ -89,7 +95,8 @@ function TicketDetail({ id }: { id: string }) {
     </nav>
     {error && <p role="alert" className="error-box">{error}</p>}
     {(notice || location.state?.approved) && <p role="status" className="success-box">{notice || 'Đã lập phiếu hỗ trợ thành công.'}</p>}
-    {!data && !error && <p role="status">Đang tải phiếu…</p>}
+    {!data && ownEscalations.length>0 && <section className="panel"><h2>Kết quả điều phối #HT-{id}</h2><p>Bạn chỉ đang xem các yêu cầu điều phối do mình gửi, không có quyền thao tác phiếu sau khi chuyển nhóm.</p><EscalationHistory items={ownEscalations}/></section>}
+    {!data && !error && !ownEscalations.length && <p role="status">Đang tải phiếu…</p>}
     {data && <>
       <div className="page-heading">
         <div><h1>{data.title}</h1><p>{data.customer.name} · Khách hàng #{data.customer.id}</p></div>
@@ -105,9 +112,9 @@ function TicketDetail({ id }: { id: string }) {
               <h3 className="preserve-text">{snapshot.title}</h3>
               <p>{snapshot.type_name || 'Chưa phân loại'}</p>
               <p className="preserve-text">{snapshot.description}</p>
-              <small>SLA tạm tính: {snapshot.sla_name || 'Chưa cấu hình'} · {snapshot.sla_state}</small>
-              <p>Hạn phản hồi tạm tính: {snapshot.response_due ? formatDate(snapshot.response_due) : 'Chưa có'}</p>
-              <p>Hạn xử lý tạm tính: {snapshot.resolution_due ? formatDate(snapshot.resolution_due) : 'Chưa có'}</p>
+              <small>SLA trước xét duyệt: {snapshot.sla_name || 'Chưa cấu hình'} · {snapshot.sla_state}</small>
+              <p>Hạn phản hồi trước xét duyệt: {snapshot.response_due ? formatDate(snapshot.response_due) : 'Chưa có'}</p>
+              <p>Hạn xử lý trước xét duyệt: {snapshot.resolution_due ? formatDate(snapshot.resolution_due) : 'Chưa có'}</p>
             </details>}
           </section>
           <Conversation role="staff" ticketId={data.id} revision={`${data.status}:${data.assigned_id}`} reload={load}
@@ -125,13 +132,14 @@ function TicketDetail({ id }: { id: string }) {
               ['Tạo lúc', formatDate(data.created_at)]].map(([label, value]) =>
               <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
           </dl></section>
-          <section className="panel"><h2>Theo dõi SLA</h2>
+          <section className="panel"><h2>Theo dõi SLA</h2><small>{data.sla_phase === 'provisional' ? 'SLA tạm tính của yêu cầu chờ xét duyệt' : data.sla_phase === 'legacy' ? 'SLA đã lưu — dữ liệu cũ chưa xác định giai đoạn' : 'SLA chính thức đã gắn khi xét duyệt'}</small>
             <span className="badge">{data.sla_state}</span>
             {data.sla_name && <><p>{data.sla_name}</p><dl className="detail-meta">
               {[['Hạn phản hồi', data.response_due], ['Hạn xử lý', data.resolution_due]].map(([label, value]) =>
                 <div key={label}><dt>{label}</dt><dd>{value ? formatDate(value) : 'Chưa có'}</dd></div>)}
             </dl></>}
           </section>
+          <EscalationPanel ticket={data} items={data.escalations??[]} configured={Boolean(data.escalation_available)} canProcess={data.can_process} reload={load}/>
         </aside>
       </div>
     </>}

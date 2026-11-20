@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { GroupTypesDialog } from './GroupTypesDialog';
 import { UserMinus } from 'lucide-react';
 import { Button, Input } from '../components';
@@ -18,6 +18,9 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
   const [adding, setAdding] = useState(false);
   const [moving, setMoving] = useState<GroupDetail['people'][number]>();
   const [editingTypes, setEditingTypes] = useState(false);
+  const [pendingSave, setPendingSave] = useState<object>();
+  const [pendingRemove, setPendingRemove] = useState<{id:string;name:string}>();
+  const requestGate = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -38,17 +41,24 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
       setError('Vui lòng nhập tên nhóm.');
       return;
     }
-    if (data.active && !active && !window.confirm('Vô hiệu hóa nhóm? Các phiếu trong hàng đợi nhóm sẽ chờ điều phối.')) return;
+    const body = { name, active, description: fd.get('description') || null, expected };
+    if (data.active && !active) { setPendingSave(body); return; }
+    await saveBody(body);
+  }
 
+  async function saveBody(body: object) {
+    if (requestGate.current) return;
+    requestGate.current = true;
     setBusy(true);
     setError('');
     try {
-      await managerApi(path, { method: 'PATCH', body: JSON.stringify({ name, active, description: fd.get('description') || null, expected }) });
+      await managerApi(path, { method: 'PATCH', body: JSON.stringify(body) });
       changed();
       close();
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      requestGate.current = false;
       setBusy(false);
     }
   }
@@ -65,23 +75,26 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
     }
   }
 
-  async function remove(employeeId: string, name: string) {
-    if (busy || !window.confirm(`Bỏ ${name} khỏi nhóm này?`)) return;
+  async function remove(employeeId: string) {
+    if (requestGate.current) return;
+    requestGate.current = true;
     setBusy(true);
     setError('');
     setNotice('');
     try {
       await managerApi(`${path}/members/remove`, { method: 'POST', body: JSON.stringify({ employee_id: employeeId }) });
       await refreshMembers('Đã cập nhật nhóm. Đã bỏ thành viên.');
+      setPendingRemove(undefined);
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      requestGate.current = false;
       setBusy(false);
     }
   }
 
   return <>
-    <ManagerDialog title={data ? `Chỉnh sửa nhóm · ${data.name}` : 'Chỉnh sửa nhóm hỗ trợ'} onClose={close} busy={busy || adding || editingTypes || !!moving} wide>
+    <ManagerDialog title={data ? `Chỉnh sửa nhóm · ${data.name}` : 'Chỉnh sửa nhóm hỗ trợ'} onClose={close} busy={busy || adding || editingTypes || !!moving || !!pendingRemove || !!pendingSave} wide>
       {error && <p role="alert" className="error-box">{error}</p>}
       {notice && <p role="status" className="success-box">{notice}</p>}
       {!data && !error && <p role="status">Đang tải chi tiết nhóm…</p>}
@@ -98,7 +111,7 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
               <h4>Loại yêu cầu phụ trách</h4>
               {data.types.length ? <ul className="manager-group-types">{data.types.map(type => <li key={type.id}>{type.name}</li>)}</ul>
                 : <p>Chưa có loại hỗ trợ được ánh xạ.</p>}
-              <Button type="button" className="secondary" disabled={busy} onClick={() => setEditingTypes(true)}>Cập nhật loại yêu cầu</Button>
+              <Button type="button" className="secondary" disabled={busy} onClick={() => setEditingTypes(true)}>Cập nhật loại hỗ trợ</Button>
             </div>
           </div>
         </section>
@@ -134,7 +147,7 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
                   <Button type="button" className="secondary" disabled={busy} onClick={() => setMoving(person)}>Chuyển nhóm</Button>}
                 <Button type="button" className="secondary manager-icon-button"
                 title="Bỏ thành viên" aria-label={`Bỏ thành viên ${person.name}`} disabled={busy}
-                onClick={() => void remove(person.id, person.name)}>
+                onClick={() => setPendingRemove({id:person.id,name:person.name})}>
                 <UserMinus size={17} aria-hidden="true"/>
               </Button></div></td>
             </tr>)}</tbody>
@@ -146,8 +159,18 @@ export function GroupDialog({ id, close, changed }: { id: string; close: () => v
         </div>
       </>}
     </ManagerDialog>
+    {pendingSave && <ManagerDialog title="Xác nhận vô hiệu hóa nhóm" busy={busy} onClose={() => setPendingSave(undefined)}>
+      <p>Các phiếu trong hàng đợi nhóm sẽ chờ điều phối. Các quan hệ chuyên môn và lịch sử được giữ nguyên.</p>
+      {error && <p role="alert" className="error-box">{error}</p>}
+      <div className="actions"><Button className="secondary" disabled={busy} onClick={() => setPendingSave(undefined)}>Hủy</Button><Button disabled={busy} onClick={() => void saveBody(pendingSave)}>Xác nhận</Button></div>
+    </ManagerDialog>}
+    {pendingRemove && <ManagerDialog title="Xác nhận bỏ thành viên" busy={busy} onClose={() => setPendingRemove(undefined)}>
+      <p>Bỏ {pendingRemove.name} khỏi nhóm? Nhân viên còn phiếu đang xử lý cần được điều phối trước.</p>
+      {error && <p role="alert" className="error-box">{error}</p>}
+      <div className="actions"><Button className="secondary" disabled={busy} onClick={() => setPendingRemove(undefined)}>Hủy</Button><Button disabled={busy} onClick={() => void remove(pendingRemove.id)}>Xác nhận</Button></div>
+    </ManagerDialog>}
     {editingTypes && data && <GroupTypesDialog groupId={id} close={() => setEditingTypes(false)}
-      onTypes={types => setData(previous => previous && { ...previous, types })}/>}
+      onTypes={types => { setData(previous => previous && { ...previous, types, type_count: types.length }); changed(); }}/>}
     {adding && data && <MemberDialog groupId={id} existing={data.people.map(person => person.id)}
       close={() => setAdding(false)} added={async () => {
         await refreshMembers('Đã cập nhật nhóm. Đã thêm thành viên.');

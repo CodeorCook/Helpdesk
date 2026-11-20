@@ -6,17 +6,19 @@ import { Button } from '../components';
 import { formatDate } from '../customer/api';
 import type { StaffTicket } from '../staff/api';
 import { managerApi } from './api';
+import type { Escalation } from '../staff/EscalationPanel';
 import { ManagerDialog } from './Dialog';
 import { allGroups, type Group } from './Groups';
 
 export type ManagerDetail = StaffTicket & {
+  escalations?: Escalation[];
   customer: { id: string; name: string };
   assignment_id: string | null;
   assignments: { id: string; employee: string; started_at: string; ended_at: string | null }[];
   history: { current: string; created_at: string }[];
 };
 
-function AssignmentDialog({ ticket, close, saved }: { ticket: ManagerDetail; close: () => void; saved: () => Promise<void> }) {
+export function AssignmentDialog({ ticket, close, saved }: { ticket: ManagerDetail; close: () => void; saved: () => Promise<void> }) {
   const [groups, setGroups] = useState<Group[]>();
   const [group, setGroup] = useState(ticket.group_id ?? '');
   const [employee, setEmployee] = useState('');
@@ -24,6 +26,8 @@ function AssignmentDialog({ ticket, close, saved }: { ticket: ManagerDetail; clo
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
+  const [rejecting,setRejecting]=useState(false);
+  const pending=ticket.escalations?.find(item=>item.status==='CHO_XU_LY');
 
   useEffect(() => {
     let active = true;
@@ -42,17 +46,18 @@ function AssignmentDialog({ ticket, close, saved }: { ticket: ManagerDetail; clo
 
   async function assign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inFlight.current || !employee || !groups?.some(item => item.id === group && item.active)) return;
+    if (inFlight.current || (!rejecting && (!employee || !groups?.some(item => item.id === group && item.active)))) return;
     const reason = String(new FormData(event.currentTarget).get('reason') ?? '').trim();
     if (!reason) { setError('Vui lòng ghi lý do điều phối.'); return; }
     inFlight.current = true;
     setBusy(true);
     setError('');
     try {
-      await managerApi(`/tickets/${ticket.id}/assignment`, {
+      if(rejecting && pending) await managerApi(`/tickets/${ticket.id}/escalations/${pending.id}/reject`,{method:'POST',body:JSON.stringify({reason,expected_updated_at:ticket.updated_at})});
+      else await managerApi(`/tickets/${ticket.id}/assignment`, {
         method: 'POST',
         body: JSON.stringify({ group_id: group, employee_id: employee === 'QUEUE' ? null : employee,
-          expected_assignment_id: ticket.assignment_id, expected_updated_at: ticket.updated_at, reason }),
+          expected_escalation_id:pending?.id??null,expected_assignment_id: ticket.assignment_id, expected_updated_at: ticket.updated_at, reason }),
       });
       await saved();
     } catch (e) {
@@ -69,7 +74,10 @@ function AssignmentDialog({ ticket, close, saved }: { ticket: ManagerDetail; clo
       <dt>Nhóm hiện tại</dt><dd>{ticket.group_name || 'Chưa xác định'}</dd>
       <dt>Người phụ trách</dt><dd>{ticket.assigned_to || 'Chưa phân công'}</dd>
     </dl>
+    {pending && <section className="notice"><strong>Cần điều phối · {pending.requester}</strong><p className="preserve-text">{pending.reason}</p><small>{formatDate(pending.created_at)}</small></section>}
+    {pending && <label className="field">Xử lý yêu cầu điều phối<select disabled={busy} value={rejecting?'reject':'assign'} onChange={e=>{setRejecting(e.target.value==='reject');setError('');}}><option value="assign">Phân công lại</option><option value="reject">Từ chối điều phối, giữ người phụ trách</option></select></label>}
     <form className="manager-form" onSubmit={assign}>
+      <fieldset disabled={rejecting || busy || !['MOI','DANG_XU_LY','TAM_DUNG'].includes(ticket.status)} className="manager-assignment-fields">
       <label className="field">Nhóm đích
         <select required value={group} disabled={busy || !groups} onChange={event => {
           setGroup(event.target.value); setEmployee(''); setPeople(undefined); setError('');
@@ -81,15 +89,17 @@ function AssignmentDialog({ ticket, close, saved }: { ticket: ManagerDetail; clo
       </label>
       <label className="field">Phương án nhận phiếu
         <select required value={employee} disabled={busy || !group} onChange={event => setEmployee(event.target.value)}>
-          <option value="">Chọn phương án</option><option value="QUEUE">Đưa về hàng đợi nhóm đích</option>
+          <option value="">Chọn phương án</option>{!pending && ticket.status==='MOI' && ticket.sla_phase!=='official' && !ticket.assignments.length && <option value="QUEUE">Đưa về hàng đợi nhóm đích</option>}
           {people?.map(person => <option key={person.id} value={person.id}>{person.name} · {person.workload} phiếu đang xử lý</option>)}
         </select>
       </label>
-      <label className="field">Lý do điều phối<textarea name="reason" required maxLength={1000} rows={3} disabled={busy}/></label>
+      </fieldset>
+      {pending && <p className="muted">Điều phối khẩn cần nhân viên đích cụ thể. Giữ nguyên trạng thái phiếu, ưu tiên và SLA.</p>}
+      <label className="field">{rejecting?'Lý do từ chối':'Lý do điều phối'}<textarea name="reason" required maxLength={1000} rows={3} disabled={busy}/></label>
       {error && <p role="alert" className="error-box">{error}</p>}
       <div className="actions manager-dialog-actions">
         <Button type="button" className="secondary" onClick={close} disabled={busy}>Hủy</Button>
-        <Button disabled={busy || !employee}>{busy ? 'Đang phân công…' : 'Xác nhận phân công lại'}</Button>
+        <Button disabled={busy || (!rejecting && (!employee || !['MOI','DANG_XU_LY','TAM_DUNG'].includes(ticket.status)))}>{busy ? 'Đang xử lý…' : rejecting?'Xác nhận từ chối điều phối':'Xác nhận phân công lại'}</Button>
       </div>
     </form>
   </ManagerDialog>;
@@ -167,14 +177,14 @@ function TicketDetail({ id }: { id: string }) {
           </section>
         </aside>
       </div>
-      {['MOI', 'DANG_XU_LY', 'TAM_DUNG'].includes(data.status) && <div className="manager-ticket-actions">
+      {(['MOI', 'DANG_XU_LY', 'TAM_DUNG'].includes(data.status) || data.escalations?.some(e=>e.status==='CHO_XU_LY')) && <div className="manager-ticket-actions">
         <Button disabled={loading || !!error} onClick={() => setAssignment(data)}><ArrowRightLeft size={17} aria-hidden="true"/> Phân công lại</Button>
       </div>}
     </>}
     {assignment && <AssignmentDialog ticket={assignment} close={() => { setAssignment(undefined); void load(); }}
       saved={async () => {
         setAssignment(undefined);
-        setNotice('Đã phân công lại phiếu.');
+        setNotice('Đã xử lý điều phối phiếu.');
         await load();
       }}/>}
   </>;

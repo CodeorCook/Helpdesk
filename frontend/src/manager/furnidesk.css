@@ -1,11 +1,895 @@
+/* FurniDesk Bento Grid & Modern Dashboard Styling */
+
 .furni-dashboard {
   display: flex;
   flex-direction: column;
   gap: 24px;
   width: 100%;
+  min-width: 0;
 }
 
-.furni-table-card {
+/* 1. Header & Actions */
+.furni-dashboard .furni-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.furni-dashboard .furni-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.furni-dashboard .furni-pulse-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  background: var(--pale);
+  color: var(--link);
+  border: 1px solid var(--success-border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.furni-dashboard .furni-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0284c7;
+  animation: furni-pulse 1.8s infinite;
+}
+
+@keyframes furni-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(2, 132, 199, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0);
+  }
+}
+
+.furni-dashboard .furni-station-tag {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.furni-dashboard .furni-title-group h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.furni-dashboard .furni-title-group p {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.furni-dashboard .furni-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.furni-dashboard .furni-filter-group {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  gap: 2px;
+}
+
+.furni-dashboard .furni-filter-btn {
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.furni-dashboard .furni-filter-btn:hover {
+  color: var(--ink);
+}
+
+.furni-dashboard .furni-filter-btn.active {
+  background: var(--surface);
+  color: #0284c7;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.furni-dashboard .furni-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.furni-dashboard .furni-btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px var(--shadow-soft);
+}
+
+.furni-dashboard .furni-btn-secondary:hover {
+  background: var(--canvas);
+}
+
+.furni-dashboard .furni-btn-primary {
+  background: #0284c7;
+  color: #fff;
+  border: 1px solid #0284c7;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+}
+
+.furni-dashboard .furni-btn-primary:hover {
+  background: #0369a1;
+  border-color: #0369a1;
+}
+
+/* 2. Operational Pipeline Hub (Khối A: Pipeline Stream + Khối B: Risk & Resource Sentinel) */
+.furni-dashboard .furni-pipeline-hub {
+  display: grid;
+  grid-template-columns: minmax(0, 7.5fr) minmax(0, 4.5fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* Khối A: Pipeline Stream Card */
+.furni-dashboard .furni-pipeline-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.furni-dashboard .furni-pipeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.furni-dashboard .furni-pipeline-stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.furni-dashboard .furni-stage-box {
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.furni-dashboard .furni-stage-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px var(--shadow-soft);
+}
+
+.furni-dashboard .furni-stage-box.stage-active {
+  border-color: #38bdf8;
+  background: color-mix(in srgb, #0284c7 6%, var(--surface));
+}
+
+.furni-dashboard .furni-stage-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.furni-dashboard .furni-stage-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.furni-dashboard .furni-stage-number {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 6px 0 2px;
+}
+
+.furni-dashboard .furni-stage-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Thanh phân đoạn Pipeline Bar */
+.furni-dashboard .furni-stream-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px var(--shadow-soft);
+}
+
+.furni-dashboard .furni-stream-segment {
+  height: 100%;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.furni-dashboard .furni-stream-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--muted);
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.furni-dashboard .furni-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Khối B: Risk & Resource Sentinel Card */
+.furni-dashboard .furni-sentinel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.furni-dashboard .furni-sentinel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.furni-dashboard .furni-sentinel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.furni-dashboard .furni-sentinel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  transition: background 0.15s ease;
+  text-decoration: none;
+}
+
+.furni-dashboard .furni-sentinel-item:hover {
+  background: var(--tint);
+}
+
+.furni-dashboard .furni-sentinel-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.furni-dashboard .furni-sentinel-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.furni-dashboard .furni-sentinel-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.furni-dashboard .furni-sentinel-desc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.furni-dashboard .furni-sentinel-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.furni-dashboard .furni-sentinel-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+@media (max-width: 1280px) {
+  .furni-dashboard .furni-pipeline-hub {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .furni-dashboard .furni-pipeline-stages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* KPI Themes */
+.furni-dashboard .kpi-amber {
+  background: color-mix(in srgb, #f59e0b 8%, var(--surface));
+  border-color: #fcd34d;
+}
+
+.furni-dashboard .kpi-amber .furni-kpi-badge, .furni-dashboard .kpi-amber .furni-kpi-val, .furni-dashboard .kpi-amber .furni-kpi-unit {
+  color: #b45309;
+}
+
+.furni-dashboard .kpi-amber .furni-kpi-icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.furni-dashboard .kpi-sky {
+  background: linear-gradient(180deg, color-mix(in srgb, #0284c7 8%, var(--surface)), var(--surface));
+  border-color: #7dd3fc;
+  border-width: 2px;
+}
+
+.furni-dashboard .kpi-sky .furni-kpi-badge, .furni-dashboard .kpi-sky .furni-kpi-val, .furni-dashboard .kpi-sky .furni-kpi-unit {
+  color: #0284c7;
+}
+
+.furni-dashboard .kpi-sky-pill {
+  background: #0284c7;
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.furni-dashboard .kpi-green {
+  background: var(--surface);
+}
+
+.furni-dashboard .kpi-green .furni-kpi-val {
+  color: #059669;
+}
+
+.furni-dashboard .kpi-green-pill {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.furni-dashboard .furni-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.furni-dashboard .furni-avatar-item {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: -6px;
+}
+
+.furni-dashboard .furni-avatar-item:first-child {
+  margin-left: 0;
+}
+
+/* 2.5 Two-Column Unified Card (Left: Donut Visual Hub + Right: Stream & Status List) */
+.furni-dashboard .furni-split-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.furni-dashboard .furni-split-grid {
+  display: grid;
+  grid-template-columns: minmax(210px, 240px) minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+}
+
+.furni-dashboard .furni-split-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.furni-dashboard .furni-split-donut-box {
+  position: relative;
+  width: 210px;
+  height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.furni-dashboard .furni-donut-segment {
+  cursor: pointer;
+  transform-origin: 50% 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.furni-dashboard .furni-donut-segment:hover, .furni-dashboard .furni-donut-segment.is-highlighted {
+  stroke-width: 15px !important;
+}
+
+.furni-dashboard .furni-donut-segment.seg-processing:hover, .furni-dashboard .furni-donut-segment.seg-processing.is-highlighted {
+  filter: drop-shadow(0 0 8px rgba(2, 132, 199, 0.6));
+}
+
+.furni-dashboard .furni-donut-segment.seg-closed:hover, .furni-dashboard .furni-donut-segment.seg-closed.is-highlighted {
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+}
+
+.furni-dashboard .furni-donut-segment.seg-waiting:hover, .furni-dashboard .furni-donut-segment.seg-waiting.is-highlighted {
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
+}
+
+.furni-dashboard .furni-donut-segment.seg-overdue:hover, .furni-dashboard .furni-donut-segment.seg-overdue.is-highlighted {
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
+}
+
+.furni-dashboard .furni-donut-hub-interactive {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+.furni-dashboard .furni-split-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Status Item Interactive Hover Effects */
+.furni-dashboard .furni-status-item.is-hovered {
+  background: color-mix(in srgb, #0284c7 10%, var(--surface));
+  border-color: #38bdf8;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+
+@media (max-width: 992px) {
+  .furni-dashboard .furni-split-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .furni-dashboard .furni-split-left {
+    padding-bottom: 10px;
+  }
+}
+
+/* 3. Center Bento Grid (5 cols + 7 cols) */
+.furni-dashboard .furni-center-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.furni-dashboard .furni-bento-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+}
+
+.furni-dashboard .furni-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.furni-dashboard .furni-card-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0284c7;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.furni-dashboard .furni-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.furni-dashboard .furni-badge-count {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: var(--pale);
+  color: var(--link);
+  border: 1px solid var(--success-border);
+}
+
+/* Donut Showcase */
+.furni-dashboard .furni-donut-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 10px auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.furni-dashboard .furni-donut-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.furni-dashboard .furni-donut-hub {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.furni-dashboard .furni-hub-number {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.furni-dashboard .furni-hub-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.furni-dashboard .furni-hub-sync {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0284c7;
+  background: var(--pale);
+  border: 1px solid var(--success-border);
+  padding: 1px 8px;
+  border-radius: 9999px;
+  margin-top: 4px;
+}
+
+/* Donut Status Buttons */
+.furni-dashboard .furni-status-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.furni-dashboard .furni-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.furni-dashboard .furni-status-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--canvas);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.furni-dashboard .furni-status-item:hover {
+  background: var(--tint);
+  border-color: #38bdf8;
+  transform: translateX(3px);
+}
+
+.furni-dashboard .furni-status-item.is-active {
+  background: color-mix(in srgb, #0284c7 12%, var(--surface));
+  border-color: #0284c7;
+  box-shadow: 0 0 0 1px #0284c7, 0 2px 8px var(--shadow-soft);
+}
+
+.furni-dashboard .furni-status-item.is-empty {
+  opacity: 0.55;
+}
+
+.furni-dashboard .furni-status-item.is-empty:hover {
+  opacity: 0.85;
+}
+
+.furni-dashboard .furni-status-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.furni-dashboard .furni-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.furni-dashboard .furni-status-item:hover .furni-dot, .furni-dashboard .furni-status-item.is-active .furni-dot {
+  transform: scale(1.25);
+}
+
+.furni-dashboard .furni-status-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.furni-dashboard .furni-status-desc {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.furni-dashboard .furni-status-figures {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.furni-dashboard .furni-count-pill {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.furni-dashboard .furni-stat-pct {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.furni-dashboard .furni-pct-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--link);
+}
+
+/* Right Column: Teams & 3 KPI Cockpit */
+.furni-dashboard .furni-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.furni-dashboard .furni-team-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+}
+
+.furni-dashboard .furni-team-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.furni-dashboard .furni-team-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.furni-dashboard .furni-team-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.furni-dashboard .furni-team-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.furni-dashboard .furni-team-numbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.furni-dashboard .furni-team-track {
+  width: 100%;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--canvas);
+  overflow: hidden;
+}
+
+.furni-dashboard .furni-team-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+/* 3 Mini KPI Widgets */
+.furni-dashboard .furni-cockpit-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.furni-dashboard .furni-mini-widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.furni-dashboard .furni-mini-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.furni-dashboard .furni-mini-main {
+  margin: 8px 0;
+}
+
+.furni-dashboard .furni-mini-val {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.furni-dashboard .furni-mini-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+.furni-dashboard .furni-mini-footer {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* 4. Bottom Table: Live Actionable Tickets */
+.furni-dashboard .furni-table-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -13,28 +897,41 @@
   box-shadow: 0 1px 3px var(--shadow-soft);
 }
 
-.furni-table-header {
+.furni-dashboard .furni-table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 18px;
 }
 
-.furni-table-container {
+.furni-dashboard .furni-table-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.furni-dashboard .furni-table-title-row h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.furni-dashboard .furni-table-container {
   overflow-x: auto;
   margin: 0 -8px;
   padding: 0 8px;
 }
 
-.furni-table {
+.furni-dashboard .furni-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
   text-align: left;
-  min-width: 520px;
+  min-width: 800px;
 }
 
-.furni-table th {
+.furni-dashboard .furni-table th {
   padding: 12px 14px;
   background: var(--canvas);
   color: var(--muted);
@@ -46,17 +943,169 @@
   white-space: nowrap;
 }
 
-.furni-table td {
+.furni-dashboard .furni-table td {
   padding: 14px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
-.furni-table tr:hover td {
+.furni-dashboard .furni-table tr:hover td {
   background: var(--tint);
 }
 
-.furni-table-footer {
+.furni-dashboard .furni-ticket-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.furni-dashboard .furni-code-link {
+  color: #0284c7;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.furni-dashboard .furni-code-link:hover {
+  text-decoration: underline;
+  color: #38bdf8;
+}
+
+.furni-dashboard .furni-ticket-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.furni-dashboard .furni-ticket-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--pale);
+  border: 1px solid var(--success-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.furni-dashboard .furni-ticket-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.furni-dashboard .furni-ticket-name:hover {
+  text-decoration: underline;
+  color: #0d9488;
+}
+
+/* Category Badges for Ticket Types */
+.furni-dashboard .furni-category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.furni-dashboard .badge-consulting {
+  background: rgba(20, 184, 166, 0.15);
+  color: #2dd4bf;
+  border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.furni-dashboard .badge-warranty {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.furni-dashboard .badge-installation {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.furni-dashboard .badge-complaint {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.furni-dashboard .furni-ticket-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.furni-dashboard .furni-tech-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.furni-dashboard .furni-tech-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--pale);
+  color: var(--link);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.furni-dashboard .furni-sla-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: var(--pale);
+  color: var(--link);
+  border: 1px solid var(--success-border);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.furni-dashboard .furni-action-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.furni-dashboard .furni-action-btn:hover {
+  background: #0284c7;
+  color: #fff;
+  border-color: #0284c7;
+}
+
+.furni-dashboard .furni-table-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -65,4 +1114,454 @@
   border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--muted);
+}
+
+.furni-dashboard .furni-all-link {
+  color: #0284c7;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.furni-dashboard .furni-all-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 1280px) {
+  .furni-dashboard .furni-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .furni-dashboard .furni-center-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .furni-dashboard .furni-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .furni-dashboard .furni-cockpit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .furni-dashboard .furni-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ==========================================================================
+   FURNIDESK UAT ENHANCEMENTS: OFFLINE BANNER, P0 SLA, INLINE DISPATCH, BULK BAR
+   ========================================================================== */
+
+/* Offline / Mock Warning Banner */
+.furni-dashboard .furni-offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.furni-dashboard .furni-offline-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.furni-dashboard .furni-offline-btn {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fff;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.furni-dashboard .furni-offline-btn:hover {
+  background: rgba(245, 158, 11, 0.4);
+}
+
+/* Empty State */
+.furni-dashboard .furni-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 16px;
+  border: 1px dashed var(--border);
+  margin: 16px 0;
+}
+
+.furni-dashboard .furni-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(13, 148, 136, 0.12);
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  color: #2dd4bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.furni-dashboard .furni-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.furni-dashboard .furni-empty-desc {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 440px;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+/* P0 SLA Badge */
+.furni-dashboard .furni-sla-p0 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  animation: furni-pulse-red 1.8s infinite;
+}
+
+@keyframes furni-pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Furniture Product Tags */
+.furni-dashboard .furni-product-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.furni-dashboard .furni-tag-sofa {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.furni-dashboard .furni-tag-wood {
+  background: rgba(234, 88, 12, 0.12);
+  color: #fdba74;
+  border-color: rgba(234, 88, 12, 0.35);
+}
+
+.furni-dashboard .furni-tag-kitchen {
+  background: rgba(6, 182, 212, 0.12);
+  color: #67e8f9;
+  border-color: rgba(6, 182, 212, 0.35);
+}
+
+.furni-dashboard .furni-tag-table {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+/* Inline Quick Dispatch Trigger & Popover */
+.furni-dashboard .furni-dispatch-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.furni-dashboard .furni-dispatch-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.furni-dashboard .furni-dispatch-trigger:hover {
+  background: var(--surface);
+  border-color: #0d9488;
+}
+
+.furni-dashboard .furni-dispatch-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  min-width: 260px;
+  max-width: 300px;
+  padding: 8px;
+  border-radius: 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  animation: furni-fade-in 0.15s ease-out;
+}
+
+@keyframes furni-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.furni-dashboard .furni-dispatch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 8px;
+  border-bottom: 1px solid #1e293b;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.furni-dashboard .furni-dispatch-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.furni-dashboard .furni-dispatch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: #e2e8f0;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.furni-dashboard .furni-dispatch-item:hover {
+  background: #1e293b;
+  color: #38bdf8;
+}
+
+.furni-dashboard .furni-dispatch-item.is-queue {
+  border-bottom: 1px solid #1e293b;
+  margin-bottom: 4px;
+  color: #94a3b8;
+}
+
+.furni-dashboard .furni-dispatch-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(13, 148, 136, 0.2);
+  color: #2dd4bf;
+}
+
+.furni-dashboard .furni-dispatch-badge.heavy {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+/* Floating Bulk Action Bar */
+.furni-dashboard .furni-bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(13, 148, 136, 0.5);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  animation: furni-slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes furni-slide-up {
+  from { opacity: 0; transform: translate(-50%, 16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.furni-dashboard .furni-bulk-counter {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+  padding-right: 12px;
+  border-right: 1px solid #334155;
+  white-space: nowrap;
+}
+
+.furni-dashboard .furni-bulk-counter strong {
+  color: #2dd4bf;
+  font-size: 14px;
+}
+
+.furni-dashboard .furni-bulk-select {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  font-size: 12px;
+  outline: none;
+}
+
+.furni-dashboard .furni-bulk-btn {
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.furni-dashboard .furni-bulk-btn:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.furni-dashboard .furni-bulk-close {
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.furni-dashboard .furni-bulk-close:hover {
+  color: #fff;
+}
+
+/* 1-Click Escalate Button & Dialog */
+.furni-dashboard .furni-escalate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9px;
+  background: #e11d48;
+  border: 1px solid #be123c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
+  white-space: nowrap;
+}
+
+.furni-dashboard .furni-escalate-btn:hover {
+  background: #f43f5e;
+  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.5);
+}
+
+/* Internal Chat Safety Warning */
+
+.furni-dashboard .furni-period-note,.furni-dashboard .furni-segment-explanation p {font-size:12px;line-height:1.65;color:var(--muted)}
+.furni-dashboard .furni-segment-explanation {margin-top:-12px}
+.furni-dashboard .furni-center-grid {grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+.furni-dashboard .furni-center-grid>*,.furni-dashboard .furni-table-card {min-width:0}
+.furni-dashboard .furni-mini-val {font-size:clamp(20px,2.3vw,32px);overflow-wrap:anywhere}
+.furni-dashboard .furni-table td {white-space:normal;overflow-wrap:anywhere}
+.furni-dashboard .furni-table td small {display:block;color:var(--muted);margin-top:7px}
+.furni-dashboard .furni-offline-banner {color:var(--warm-ink)}
+.furni-dashboard .furni-offline-btn {color:var(--ink)}
+.furni-dashboard .furni-donut-segment:focus-visible {outline:2px solid var(--ink)}
+.furni-dashboard .furni-table-footer {gap:12px;flex-wrap:wrap}
+@media(max-width:1100px){.furni-dashboard .furni-center-grid {grid-template-columns:1fr}}
+@media(max-width:600px){
+ .furni-dashboard .furni-eyebrow,.furni-dashboard .furni-card-header {flex-wrap:wrap}
+ .furni-dashboard .furni-table-card {padding:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ .furni-dashboard * {animation:none!important;transition:none!important}
+}
+.furni-dashboard .furni-table-header {gap:14px;flex-wrap:wrap}
+.furni-dashboard .furni-table-header>div {min-width:0}
+.furni-dashboard .furni-table-header>div:last-child {flex-shrink:0}
+:root:not([data-theme=dark]) .furni-dashboard .furni-status-item {background:var(--canvas)}
+:root:not([data-theme=dark]) .furni-dashboard .furni-sla-p0 {color:#b42335;background:#fff0f1;border-color:#efbec7}
+:root[data-theme=dark] .furni-dashboard .kpi-green-pill {color:#a4e6c7;background:#123d30;border-color:#356b50}
+.furni-dashboard .furni-escalation-toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:16px 0}
+.furni-dashboard .furni-escalation-toolbar label{display:grid;gap:6px;max-width:100%;font-size:13px;margin:0;min-width:min(280px,100%)}
+.furni-dashboard .furni-escalation-count{padding:10px;border:1px solid #c27424;border-radius:10px;color:var(--ink)}
+.furni-dashboard .furni-escalation-count small{display:block;color:var(--muted)}
+.furni-dashboard .furni-escalation-badge{font:inherit;font-size:12px;border:1px solid #c27424;color:var(--ink);background:color-mix(in srgb,#e89b38 15%,var(--surface));border-radius:8px;padding:5px 8px;margin-top:8px;cursor:pointer}
+.furni-dashboard .furni-reassign-button{font:inherit;background:none;border:0;cursor:pointer;padding:8px 0;text-align:left}
+.furni-dashboard .furni-table tr:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.furni-dashboard .furni-ticket-status,.furni-dashboard .furni-ticket-priority{display:inline-block;padding:5px 8px;border-radius:8px;font-size:12px;font-weight:600;color:var(--ink);background:var(--surface-soft,var(--surface));border:1px solid var(--border)}
+.furni-dashboard .furni-state-moi{background:color-mix(in srgb,#0D9DA4 15%,var(--surface))}
+.furni-dashboard .furni-state-dang_xu_ly{background:color-mix(in srgb,#368bd6 18%,var(--surface))}
+.furni-dashboard .furni-state-tam_dung,.furni-dashboard .furni-priority-medium{background:color-mix(in srgb,#eab442 20%,var(--surface))}
+.furni-dashboard .furni-state-da_giai_quyet,.furni-dashboard .furni-state-da_dong,.furni-dashboard .furni-priority-low{background:color-mix(in srgb,#389766 15%,var(--surface))}
+.furni-dashboard .furni-state-da_huy,.furni-dashboard .furni-priority-high{background:color-mix(in srgb,#d35252 18%,var(--surface))}
+.furni-dashboard .furni-table{min-width:980px}
+@media(max-width:700px){
+ .furni-dashboard .furni-table{min-width:0;display:block}
+ .furni-dashboard .furni-table thead{display:none}
+ .furni-dashboard .furni-table tbody{display:grid;gap:12px}
+ .furni-dashboard .furni-table tr{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--border);border-radius:10px;padding:10px}
+ .furni-dashboard .furni-table td{display:block;border:0;padding:8px}
+ .furni-dashboard .furni-table td::before{content:attr(data-label);display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
 }

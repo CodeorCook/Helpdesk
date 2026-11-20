@@ -10,7 +10,7 @@ from api.routes.customer import mutation_guard
 from schemas.auth import UserResponse
 from schemas.manager import Account,AccountPage,AccountUpdate,EmployeeCreate,RoleChange,StoredRole,DashboardOverview
 from schemas.manager import GroupInput,GroupUpdate,Group,GroupDetail,GroupPage,MemberInput,MembershipChange,Message,Routing,RoutingInput,SLAState
-from schemas.manager import AssignmentInput
+from schemas.manager import AssignmentInput, ManagerTicketPage
 from schemas.manager import SLAInput,SLAUpdate,SLAApply,Policy,PolicyPage
 from schemas.manager import ReportAnalytics,ReportPage,ActivityPage
 from schemas.staff import StaffPage,StaffTicket,StaffDetail,Employee,Receipt
@@ -25,7 +25,20 @@ def ID():
 
 
 @router.get('/overview',response_model=DashboardOverview)
-def overview(user:UserResponse=Depends(manager)):return service.overview(user.id, include_trends=True)
+def overview(preset: Literal['today','7d','month'] | None=None, user:UserResponse=Depends(manager)):
+    options = {}
+    if preset:
+        start, end = report_service.report_period(preset, None, None)
+        options = dict(from_date=start, to_date=end)
+    result=service.overview(user.id, include_trends=True, **options)
+    from services import escalation_service
+    with service.manager_cursor(user.id) as (cur,_):
+        result['escalation_available']=escalation_service.available(cur)
+        result['pending_escalations']=None
+        if result['escalation_available']:
+            escalation_service.execute(cur,"SELECT count(*) total FROM {yeu_cau_dieu_phoi_phieu} WHERE trang_thai='CHO_XU_LY'")
+            result['pending_escalations']=cur.fetchone()['total']
+    return result
 
 
 @router.get('/users',response_model=AccountPage)
@@ -102,9 +115,11 @@ def ticket_filters(search:str=Query('',max_length=200),type_id:int|None=Query(No
     return dict(search=search,type_id=type_id,status=status,priority=priority,from_date=from_date,to_date=to_date,group_id=group_id,employee_id=employee_id,customer_status=customer_status,scope=scope,sla_state=sla_state)
 
 
-@router.get('/tickets',response_model=StaffPage)
-def tickets(filters:dict=Depends(ticket_filters),page:int=Query(1,ge=1,le=100000),page_size:int=Query(10,ge=1,le=50),user:UserResponse=Depends(manager)):
-    return service.tickets(user.id,page,page_size,**filters)
+@router.get('/tickets',response_model=ManagerTicketPage)
+def tickets(filters:dict=Depends(ticket_filters),page:int=Query(1,ge=1,le=100000),page_size:int=Query(10,ge=1,le=50),
+            dashboard_segment:Literal['attention','processing','closed','waiting','overdue','other']|None=None,
+            sort:Literal['intervention']|None=None,urgent_only:bool=False,user:UserResponse=Depends(manager)):
+    return service.tickets(user.id,page,page_size,dashboard_segment=dashboard_segment,sort=sort,urgent_only=urgent_only,**filters)
 
 
 @router.get('/catalog/{kind}',response_model=list[CatalogItem])
@@ -200,3 +215,75 @@ def send_internal_message(body: MessageCreate, ticket_id: int = Path(gt=0, le=92
 def preview_attachment(ticket_id:int=Path(gt=0,le=9223372036854775807),attachment_id:int=Path(gt=0,le=9223372036854775807),user:UserResponse=Depends(manager)):
     path,name,mime=conversation_service.preview('manager',user.id,ticket_id,attachment_id)
     return FileResponse(path,filename=name,media_type=mime,content_disposition_type='inline',headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox"})
+
+
+from services import support_type_service as support_types
+from schemas.manager import SupportTypeInput, SupportTypeUpdate, SupportTypeDelete, SupportType, SupportTypePage, GroupTypes
+
+
+@router.get('/support-types', response_model=SupportTypePage)
+def support_catalog(search: str=Query('',max_length=200), active: bool|None=None,
+                    page: int=Query(1,ge=1,le=100000), page_size: int=Query(5,ge=1,le=100), user: UserResponse=Depends(manager)):
+    return support_types.catalog(user.id,search,active,page,page_size)
+
+
+@router.post('/support-types', response_model=SupportType, status_code=201, dependencies=[Depends(mutation_guard)])
+def create_support_type(body: SupportTypeInput,user: UserResponse=Depends(manager)):
+    return support_types.save(user.id,body)
+
+
+@router.patch('/support-types/{type_id}', response_model=SupportType, dependencies=[Depends(mutation_guard)])
+def update_support_type(body: SupportTypeUpdate,type_id: int=ID(),user: UserResponse=Depends(manager)):
+    return support_types.save(user.id,body,type_id)
+
+
+@router.delete('/support-types/{type_id}', response_model=Message, dependencies=[Depends(mutation_guard)])
+def delete_support_type(body: SupportTypeDelete,type_id: int=ID(),user: UserResponse=Depends(manager)):
+    return support_types.delete(user.id,type_id,body.expected)
+
+
+@router.get('/groups/{group_id}/support-types', response_model=GroupTypes)
+def group_support_types(group_id: int=ID(),user: UserResponse=Depends(manager)):
+    return support_types.group_types(user.id,group_id)
+
+
+@router.post('/groups/{group_id}/support-types/{type_id}', response_model=Message, dependencies=[Depends(mutation_guard)])
+def add_group_expertise(group_id: int=ID(),type_id: int=ID(),user: UserResponse=Depends(manager)):
+    return support_types.change_expertise(user.id,group_id,type_id)
+
+
+@router.delete('/groups/{group_id}/support-types/{type_id}', response_model=Message, dependencies=[Depends(mutation_guard)])
+def remove_group_expertise(group_id: int=ID(),type_id: int=ID(),user: UserResponse=Depends(manager)):
+    return support_types.change_expertise(user.id,group_id,type_id,True)
+
+
+from schemas.manager import SLAStateChange
+
+
+@router.get('/sla/{policy_id}', response_model=Policy)
+def policy_detail(policy_id:int=ID(),user:UserResponse=Depends(manager)):
+    with service.manager_cursor(user.id) as (cur,_):
+        return service.policy_row(cur,policy_id)
+
+
+@router.post('/sla/{policy_id}/state', response_model=Policy, dependencies=[Depends(mutation_guard)])
+def policy_state(body:SLAStateChange,policy_id:int=ID(),user:UserResponse=Depends(manager)):
+    return service.policy_state(user.id,policy_id,body)
+
+
+@router.get('/sla/{policy_id}/state')
+def policy_state_preview(policy_id:int=ID(),user:UserResponse=Depends(manager)):
+    with service.manager_cursor(user.id) as (cur,_):
+        policy=service.policy_row(cur,policy_id)
+        service.execute(cur,service.POLICY_VIEW+' WHERE s.mdut_ma=%s AND s.dang_hoat_dong',(policy['priority_id'],))
+        return {'policy':policy,'current':cur.fetchone()}
+
+
+from schemas.manager import ManagerTicketPage
+from schemas.staff import EscalationRequest
+from services import escalation_service
+
+
+@router.post('/tickets/{ticket_id}/escalations/{request_id}/reject',response_model=Message,dependencies=[Depends(mutation_guard)])
+def reject_escalation(body:EscalationRequest,ticket_id:int=ID(),request_id:int=ID(),user:UserResponse=Depends(manager)):
+    return escalation_service.reject(user.id,ticket_id,request_id,body)

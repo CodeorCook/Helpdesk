@@ -33,6 +33,11 @@ class TicketCancel(StrictInput):
 
 
 class TicketResponse(BaseModel):
+    sla_id: str | None = None
+    sla_name: str | None = None
+    response_due: datetime | None = None
+    resolution_due: datetime | None = None
+    sla_phase: str = "legacy"
     can_modify: bool = False
     end_reason: str | None = None
     termination_kind: str | None = None

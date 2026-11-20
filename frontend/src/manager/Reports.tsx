@@ -552,6 +552,20 @@ export function ManagerReports() {
   const [error, setError] = useState('');
   const [catalogError, setCatalogError] = useState('');
   const [printed, setPrinted] = useState<Date>();
+  const validDates = preset !== 'custom' || !!(startDate && endDate && startDate <= endDate &&
+    (Date.parse(endDate)-Date.parse(startDate))/86400000 < 366);
+  const desired = new URLSearchParams({preset});
+  if (preset === 'custom') { desired.set('start',startDate); desired.set('end',endDate); }
+  if (selectedGroup) desired.set('group',selectedGroup);
+  if (selectedType) desired.set('type',selectedType);
+  const desiredQuery = desired.toString();
+  const filterPending = !validDates || selection.query !== desiredQuery;
+
+  useEffect(() => {
+    if (!validDates || selection.query === desiredQuery) return;
+    const timer = window.setTimeout(() => apply(desiredQuery),250);
+    return () => window.clearTimeout(timer);
+  },[desiredQuery,validDates,selection.query]);
 
   useEffect(() => {
     let active = true;
@@ -608,6 +622,7 @@ export function ManagerReports() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!validDates) return;
     const params = new URLSearchParams();
     if (preset === 'custom') {
       params.set('preset', 'custom');
@@ -645,14 +660,14 @@ export function ManagerReports() {
           <button
             type="button"
             className="furni-export-btn"
-            disabled={busy || !report || !!error}
+            disabled={busy || filterPending || !report || !!error}
             onClick={() => report && exportToCSV(report, groupName, typeName)}
             title="Xuất file bảng tính Excel (CSV UTF-8)"
           >
             <FileSpreadsheet size={17} aria-hidden="true" />
             Xuất Excel (CSV)
           </button>
-          <Button disabled={busy || !report || !!error} onClick={() => setPrinted(new Date())}>
+          <Button disabled={busy || filterPending || !report || !!error} onClick={() => setPrinted(new Date())}>
             <Printer size={17} aria-hidden="true" /> Xuất bản in (PDF)
           </Button>
         </div>
@@ -704,6 +719,8 @@ export function ManagerReports() {
           <Button type="submit">Áp dụng</Button>
         </div>
       </form>
+      {!validDates && <p className="error-box" role="alert">Chọn đủ ngày bắt đầu và kết thúc, ngày bắt đầu không sau ngày kết thúc, tối đa 366 ngày.</p>}
+      {filterPending && validDates && <p role="status">Đang áp dụng bộ lọc…</p>}
 
       {catalogError && (
         <p className="error-box report-screen-only" role="alert">

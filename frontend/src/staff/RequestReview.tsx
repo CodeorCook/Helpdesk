@@ -24,6 +24,13 @@ export function RequestReview() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [stale, setStale] = useState(false);
+  const [legacyConfirmed,setLegacyConfirmed]=useState(false);
+  const [preview,setPreview]=useState<{priority:string;policy:{id:string;name:string;response_minutes:number;resolution_minutes:number}|null}>();
+  const [previewError,setPreviewError]=useState('');
+  const [previewRevision,setPreviewRevision]=useState(0);
+  useEffect(()=>{let alive=true;setPreview(undefined);setPreviewError('');
+    if(draft.priority_id)staffApi<{policy:{id:string;name:string;response_minutes:number;resolution_minutes:number}|null}>(`/sla-preview?priority_id=${draft.priority_id}`).then(result=>{if(alive)setPreview({priority:draft.priority_id,policy:result.policy});}).catch(e=>{if(alive)setPreviewError(e.message);});
+    return()=>{alive=false;};},[draft.priority_id,previewRevision]);
   const [revision, setRevision] = useState(0);
   const submitting = useRef(false);
   const canApprove = data?.status === 'MOI' && !data.assigned_id && !data.assignment_id;
@@ -84,12 +91,14 @@ export function RequestReview() {
     ];
     const missing = required.find(([value]) => !value);
     if (missing) { setError(missing[1]); return; }
+    if (!preview?.policy || preview.priority !== draft.priority_id) {setError('Chưa có SLA đang áp dụng hoặc chưa tải được xem trước. Nội dung đã nhập được giữ nguyên.');return;}
+    if (data.sla_id && data.sla_phase === 'legacy' && !legacyConfirmed) {setError('Cần xác nhận thay SLA trên yêu cầu cũ chưa xác định tạm tính/chính thức.');return;}
     submitting.current = true;
     setBusy(true);
     setError('');
     try {
       const result = await staffApi<StaffTicket>(`/tickets/${id}/approve`, {
-        method: 'POST', body: JSON.stringify({ ...draft, expected_updated_at: data.updated_at }),
+        method: 'POST', body: JSON.stringify({ ...draft, expected_updated_at: data.updated_at, confirm_legacy_sla_replacement: legacyConfirmed }),
       });
       navigate(`/staff/tickets/${result.id}`, { replace: true, state: { approved: true } });
     } catch (e) {
@@ -149,6 +158,7 @@ export function RequestReview() {
           onChange={e => setDraft({ ...draft, title: e.target.value })}/>
         <label className="field">Loại hỗ trợ<select required value={draft.type_id} onChange={e => setDraft({ ...draft, type_id: e.target.value })}>
           <option value="">Chọn loại hỗ trợ</option>
+          {data?.type_id && !catalog.types.some(type => type.id === data.type_id) && <option value={data.type_id}>{data.type_name} (đã ngừng, yêu cầu cũ)</option>}
           {catalog.types.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
         </select></label>
         <label className="field">Mô tả đã chuẩn hóa<textarea required rows={7} maxLength={20000} value={draft.description}
@@ -158,9 +168,15 @@ export function RequestReview() {
           {catalog.priorities.map(priority => <option key={priority.id} value={priority.id}>{priority.name}</option>)}
         </select></label>
         <small>Thấp: tư vấn thông thường, ít ảnh hưởng. Trung bình: cần xử lý nhưng chưa khẩn cấp. Cao: sự cố nghiêm trọng hoặc có nguy cơ mất an toàn.</small>
-        <small>SLA áp dụng theo mức đã chọn, tính từ lúc khách gửi. Mức chưa có chính sách hiệu lực sẽ chưa có hạn SLA.</small>
+        <section className="notice staff-sla-preview" aria-live="polite"><strong>Chính sách SLA sẽ áp dụng</strong>
+          {preview?.priority===draft.priority_id ? preview.policy?<><p>{preview.policy.name} · #{preview.policy.id}</p><p>Phản hồi: {preview.policy.response_minutes} phút · Xử lý: {preview.policy.resolution_minutes} phút.</p></>:<p>Chưa có SLA đang áp dụng cho mức ưu tiên này. Vui lòng liên hệ Quản lý trước khi lập phiếu.</p>:
+            <p>{previewError || (draft.priority_id?'Đang tải SLA…':'Chọn mức ưu tiên để xem SLA.')}</p>}
+          <Button type="button" className="secondary" disabled={busy || !draft.priority_id} onClick={()=>setPreviewRevision(v=>v+1)}>Cập nhật xem trước SLA</Button>
+          <small>Hạn tính liên tục từ lúc khách gửi. Backend gắn phiên bản hiệu lực tại lúc xác nhận; xem trước có thể thay đổi.</small>
+        </section>
+        {data.sla_id && data.sla_phase==='legacy' && <label className="notice"><input type="checkbox" checked={legacyConfirmed} onChange={e=>setLegacyConfirmed(e.target.checked)}/> Tôi xác nhận thay SLA của yêu cầu cũ bằng SLA hiệu lực theo ưu tiên đã chọn khi xét duyệt. Snapshot SLA trước đó vẫn được lưu.</label>}
         <div className="actions">
-          <Button type="submit" disabled={busy || stale}>{busy ? 'Đang lập phiếu…' : 'Lập phiếu hỗ trợ'}</Button>
+          <Button type="submit" disabled={busy || stale || !preview?.policy || preview.priority !== draft.priority_id}>{busy ? 'Đang lập phiếu…' : 'Lập phiếu hỗ trợ'}</Button>
         </div>
       </form>
       <Button style={{ width: '100%' }} className="secondary customer-danger-button staff-review-reject" disabled={busy || stale} onClick={() => {

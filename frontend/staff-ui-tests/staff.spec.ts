@@ -803,54 +803,84 @@ test('manager SLA table paginates and referenced policies allow only activation 
   }]);
 });
 
-test('manager overview charts and SLA use API data without simulated actions', async ({ page }) => {
-  const {calls} = await fixtures(page, 'manager');
-  const recent = {...ticket(0,'mine'), sla_state:'Quá hạn', assigned_to:'Nhân viên thật'};
-  await page.route('**/api/v1/manager/overview', route => route.fulfill({json:{
-    total:3,waiting:1,processing:1,paused:0,resolved:1,closed:0,overdue:1,users:2,
-    by_status:[{name:'Mới',count:1},{name:'Đang xử lý',count:1},{name:'Đã giải quyết',count:1}],
-    by_group:[{name:'Bảo hành',count:3}],by_priority:[],by_type:[],by_week:[],by_month:[],
-  }}));
-  await page.route('**/api/v1/manager/tickets?*', route => route.fulfill({json:{items:[recent],total:3,page:1,page_size:5}}));
-  await page.route('**/api/v1/manager/reports/analytics?*', route => route.fulfill({json:{metrics:{
+test('manager overview restores Bebo Bento with live filters and intervention paging', async ({ page }, info) => {
+  await fixtures(page,'manager');
+  const queries: URLSearchParams[]=[];
+  const periods: string[]=[];
+  await page.route('**/api/v1/manager/overview?*',async route=>{
+    const preset=new URL(route.request().url()).searchParams.get('preset')!;
+    periods.push(preset);
+    await route.fulfill({json:{
+      total:preset==='today'?7:9,period_start:'2026-11-01',period_end:'2026-11-19',
+      segments:[{code:'processing',count:2},{code:'closed',count:1},{code:'waiting',count:1},{code:'overdue',count:3},
+        {code:'other',count:preset==='today'?0:2}],
+      workload:[{name:'Bảo hành và bảo trì',count:3},{name:'Tư vấn và đơn hàng',count:1}],
+    }});
+  });
+  await page.route('**/api/v1/manager/tickets?*',async route=>{
+    const query=new URL(route.request().url()).searchParams;queries.push(query);
+    const current=Number(query.get('page'));const segment=query.get('dashboard_segment');
+    const total=segment==='overdue'?3:6;
+    const items=Array.from({length:Math.max(0,Math.min(5,total-(current-1)*5))},(_,i)=>({
+      ...ticket(i,'mine'),status:'DANG_XU_LY',status_label:'Đang xử lý',sla_state:'Quá hạn',priority_rank:3,
+    }));
+    await route.fulfill({json:{items,total,page:current,page_size:5,segment}});
+  });
+  await page.route('**/api/v1/manager/reports/analytics?*',route=>route.fulfill({json:{metrics:{
     resolution_on_time:2,resolution_late:1,response_avg:40,response_samples:3,rating_avg:null,ratings:0,
   }}}));
   await page.goto('/manager');
-  const chart = page.locator('.manager-unified-chart');
-  await chart.getByRole('tab',{name:/Theo nhóm/}).click();
-  await expect(chart).toContainText('Bảo hành');
-  await expect(page.getByText(/66,7%/)).toBeVisible();
-  await expect(page.getByText('40 phút · 3 phiếu')).toBeVisible();
-  await expect(page.getByText('Chưa có dữ liệu',{exact:true})).toBeVisible();
-  await expect(page.getByRole('row',{name:/HT-1000/})).toContainText('Quá hạn');
-  await expect(page.getByRole('link',{name:'#HT-1000'})).toHaveAttribute('href','/manager/tickets/1000');
-  await expect(page.getByText(/Đóng các phiếu|Gán thợ|Còn 25p|Còn 4h/)).toHaveCount(0);
-  expect(calls.filter(call=>call.method!=='GET')).toHaveLength(0);
+  await expect(page.locator('.furni-split-card')).toBeVisible();
+  await expect(page.locator('.furni-mini-widget')).toHaveCount(3);
+  await expect(page.locator('.furni-team-bars')).toContainText('Bảo hành và bảo trì');
+  await expect(page.locator('.furni-mini-widget').first()).toContainText('66,7%');
+  await expect(page.locator('.furni-mini-widget').nth(1)).toContainText('40 phút');
+  await expect(page.locator('.furni-mini-widget').nth(2)).toContainText('Chưa có dữ liệu');
+  await expect(page.locator('.furni-table tbody tr')).toHaveCount(5);
+  expect(queries.at(-1)?.get('dashboard_segment')).toBe('attention');
+  await page.locator('.furni-table-card').getByRole('button',{name:'Sau',exact:true}).click();
+  await expect(page.locator('.furni-table tbody tr')).toHaveCount(1);
+  const donut=page.getByRole('button',{name:'Lọc Quá hạn SLA',exact:true});
+  await donut.focus();await donut.press('Enter');
+  await expect.poll(()=>queries.at(-1)?.get('dashboard_segment')).toBe('overdue');
+  expect(queries.at(-1)?.get('page')).toBe('1');
+  await page.getByRole('button',{name:'7 ngày qua',exact:true}).click();
+  await expect.poll(()=>periods.at(-1)).toBe('7d');
+  await page.getByRole('button',{name:'Tháng này',exact:true}).click();
+  await expect.poll(()=>periods.at(-1)).toBe('month');
+  await expect(page.locator('.furni-donut-hub-interactive .furni-hub-number')).toHaveText('9');
+  await expect(page.getByText(/Đóng các phiếu|Gán thợ|Còn 25p|Còn 4h|KTV Tuấn|Vinhomes/)).toHaveCount(0);
   for (const theme of ['dark','light']) {
     await page.getByRole('combobox',{name:'Giao diện'}).selectOption(theme);
-    await expect(chart).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+    await page.evaluate(() => { (document.activeElement as HTMLElement)?.blur(); scrollTo(0,0); });
+    await page.screenshot({path:`test-results/bebo-overview-${info.project.name}-${theme}.png`,fullPage:true});
   }
 });
 
-test('manager report activity pages keep the applied date and scope', async ({ page }) => {
+test('manager report activity pages keep the applied date and scope', async ({ page }, info) => {
   await fixtures(page, 'manager');
   const requests: URLSearchParams[] = [];
+  const analyticsRequests: URLSearchParams[] = [];
   await page.route(/\/api\/v1\/manager\/(reports\/(analytics|activity)\?|groups\?|catalog\/types)/, async route => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/groups')) return route.fulfill({ json: { items: [{ id: '2', name: 'Bảo hành' }], total: 1, page: 1, page_size: 100 } });
     if (url.pathname.endsWith('/types')) return route.fulfill({ json: [{ id: '6', name: 'Sofa' }] });
-    if (url.pathname.endsWith('/analytics')) return route.fulfill({ json: {
+    if (url.pathname.endsWith('/analytics')) {
+      analyticsRequests.push(url.searchParams);
+      return route.fulfill({ json: {
       start: '2026-11-01', end: '2026-11-05', snapshot_at: '2026-11-05T12:00:00Z',
-      group_id: url.searchParams.get('group'), type_id: url.searchParams.get('type'), groups: [], trend: [], rating_distribution: [],
+      group_id: url.searchParams.get('group'), type_id: url.searchParams.get('type'), groups: [],
+      trend: [{grain:'day',date:'2026-11-05',created:2,resolved:1}], rating_distribution: [],
       metrics: {
-        created: 0, resolved: 0, response_samples: 0, response_avg: null, resolution_avg: null,
+        created: 2, resolved: 1, response_samples: 0, response_avg: null, resolution_avg: null,
         response_on_time: 0, response_late: 0, resolution_on_time: 0, resolution_late: 0,
         response_missing: 0, resolution_missing: 0, response_open_late: 0, response_open_on_time: 0,
         resolution_open_late: 0, resolution_open_on_time: 0, intake_missing_sla: 0, missing_resolution_time: 0,
         closed_in_period: 0, closed_with_rating: 0, ratings: 0, rating_avg: null, positive: 0,
       },
     } });
+    }
     requests.push(url.searchParams);
     const current = Number(url.searchParams.get('page'));
     return route.fulfill({ json: {
@@ -863,11 +893,21 @@ test('manager report activity pages keep the applied date and scope', async ({ p
   await page.goto('/manager/reports');
   await page.getByRole('combobox', { name: 'Nhóm hỗ trợ' }).selectOption('2');
   await page.getByRole('combobox', { name: 'Loại yêu cầu' }).selectOption('6');
-  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
   await expect(page.locator('.furni-scope-tags')).toContainText('Bảo hành');
   await expect(page.locator('.furni-scope-tags')).toContainText('Sofa');
   const history = page.getByRole('region', { name: 'Lịch sử hoạt động hỗ trợ' });
   await expect(history.locator('tbody tr')).toHaveCount(10);
+  for (const theme of ['dark','light']) {
+    await page.getByRole('combobox',{name:'Giao diện'}).selectOption(theme);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+    await page.screenshot({path:`test-results/bebo-reports-${info.project.name}-${theme}.png`,fullPage:true});
+  }
+  await page.emulateMedia({media:'print'});
+  await expect(page.locator('.sidebar')).toBeHidden();
+  await expect(page.locator('.report-filters')).toBeHidden();
+  await expect(page.locator('.furni-report-scope-card')).toContainText('Bảo hành');
+  await expect(page.locator('.report-trend svg[role="img"]')).toBeVisible();
+  await page.emulateMedia({media:'screen'});
   await history.getByLabel('Tên người thực hiện').fill('Nhân viên');
   await history.getByLabel('Tìm hoạt động').fill('#HT-1000');
   await history.getByRole('button', { name: 'Lọc hoạt động' }).click();
@@ -883,6 +923,15 @@ test('manager report activity pages keep the applied date and scope', async ({ p
   await page.locator('.report-filters').getByRole('button', { name: 'Đặt lại', exact: true }).click();
   await expect(history.locator('tbody tr')).toHaveCount(10);
   expect(requests.at(-1)?.get('group')).toBeNull();
+  await page.getByLabel('Khoảng thời gian').selectOption('custom');
+  await page.getByLabel('Từ ngày',{exact:true}).fill('2026-11-10');
+  await page.getByLabel('Đến ngày',{exact:true}).fill('2026-11-01');
+  await expect(page.getByRole('alert')).toContainText('ngày bắt đầu không sau ngày kết thúc');
+  await expect(page.getByRole('button',{name:'Xuất bản in (PDF)'})).toBeDisabled();
+  await page.getByLabel('Đến ngày',{exact:true}).fill('2026-11-12');
+  await expect.poll(() => analyticsRequests.at(-1)?.get('end')).toBe('2026-11-12');
+  expect(analyticsRequests.at(-1)?.get('start')).toBe('2026-11-10');
+  await expect(page.getByRole('button',{name:'Xuất bản in (PDF)'})).toBeEnabled();
 });
 
 test('customer profile dialog refreshes identity and new ticket stays centered', async ({ page }) => {

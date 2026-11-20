@@ -1,3 +1,4 @@
+import { TicketSLAInfo } from './TicketSLAInfo';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { CircleAlert, Pencil, Ban } from 'lucide-react';
@@ -106,6 +107,7 @@ export function RequestSummary({ id, initial, close, changed }: {
     {!data && !error && <p role="status">Đang tải yêu cầu…</p>}
     {data && <>
       <p><strong>#HT-{data.id} · {data.title}</strong></p>
+      {mode === 'view' && <TicketSLAInfo ticket={data}/>}
       {editable && mode !== 'view' ? <form className="customer-form" onSubmit={submit}>
         {mode === 'cancel' ? <>
           <p className="customer-cancel-warning"><CircleAlert size={20} aria-hidden="true"/> Sau khi hủy, yêu cầu này sẽ không còn được tiếp nhận xử lý.</p>
@@ -114,6 +116,7 @@ export function RequestSummary({ id, initial, close, changed }: {
           <Input id="customer-request-title" name="title" label="Tiêu đề" defaultValue={data.title} maxLength={200} required/>
           <label className="field">Loại hỗ trợ<select name="type_id" defaultValue={data.type_id ?? ''} key={types ? 'loaded' : 'loading'} required disabled={!types}>
             <option value="">Chọn loại hỗ trợ</option>
+            {data.type_id && types && !types.some(type => type.id === data.type_id) && <option value={data.type_id}>{data.type_name} (đã ngừng, yêu cầu cũ)</option>}
             {types?.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
           </select></label>
           <label className="field">Mô tả chi tiết<textarea name="description" defaultValue={data.description} maxLength={20000} rows={5} required/></label>

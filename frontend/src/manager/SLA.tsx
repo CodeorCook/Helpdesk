@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus, Lock, LockOpen } from 'lucide-react';
 import { Button, Input } from '../components';
 import type { Catalog } from '../customer/api';
 import { managerApi, type Page } from './api';
@@ -57,7 +57,7 @@ function SLAPolicyDialog({ policy, priorities, close, saved }: {
       priority_id: Number(fields.get('priority_id') ?? policy?.priority_id),
       response_minutes: Number(response),
       resolution_minutes: Number(resolution),
-      active: fields.get('active') === 'on',
+      active: policy?.active ?? false,
     };
     if (!values.name) return setError('Tên chính sách không được để trống.');
     if (!values.priority_id) return setError('Vui lòng chọn mức ưu tiên SLA.');
@@ -86,14 +86,14 @@ function SLAPolicyDialog({ policy, priorities, close, saved }: {
   }
 
   return <ManagerDialog title={policy ? 'Chỉnh sửa chính sách SLA' : 'Tạo chính sách SLA'} onClose={close} busy={busy}>
-    <form className="manager-form manager-sla-form" onSubmit={save} noValidate>
+    <form className="manager-form manager-sla-form" onSubmit={save} onChange={()=>setError('')} noValidate>
       {policy && <p className="muted">{policy.referenced} phiếu tham chiếu. Hạn của phiếu hiện hữu được giữ nguyên.</p>}
-      {locked && <p className="notice">Chính sách đã được sử dụng nên chỉ có thể bật hoặc tắt hiệu lực. Để đổi thời lượng, hãy tắt chính sách này rồi tạo phiên bản mới.</p>}
+      {locked && <p className="notice">Chính sách đã được sử dụng nên thông tin lịch sử được giữ nguyên. Hãy tạo bản mới rồi kích hoạt thay thế để đổi thời lượng.</p>}
       <Input id="manager-sla-name" name="name" label="Tên chính sách" maxLength={100} required defaultValue={policy?.name}
         readOnly={locked} aria-describedby="manager-sla-name-help"/>
       <small id="manager-sla-name-help">Nên đặt tên theo mức ưu tiên, ví dụ “SLA mức ưu tiên Cao”.</small>
       <label className="field">Mức ưu tiên SLA
-        <select name="priority_id" required defaultValue={policy?.priority_id ?? ''} disabled={locked}>
+        <select name="priority_id" required defaultValue={policy?.priority_id ?? ''} disabled={locked || !!policy?.active}>
           <option value="">Chọn mức ưu tiên</option>
           {priorities.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
@@ -112,12 +112,12 @@ function SLAPolicyDialog({ policy, priorities, close, saved }: {
         </div>
       </div>
       {invalidOrder && <p id="manager-sla-validation" className="field-error" role="alert">Thời gian xử lý phải lớn hơn hoặc bằng thời gian phản hồi.</p>}
-      <label><input name="active" type="checkbox" defaultChecked={policy?.active ?? true}/> Chính sách đang có hiệu lực</label>
+      <p className="notice">{policy ? "Thay đổi hiệu lực bằng icon ổ khóa trong danh sách, có bước xác nhận riêng." : "Chính sách mới mặc định chưa áp dụng. Sau khi tạo, hãy chủ động kích hoạt để thay thế bản đang dùng."}</p>
       <small>Mỗi mức ưu tiên chỉ có một chính sách có hiệu lực tại một thời điểm.</small>
       {error && <p className="error-box" role="alert">{error}</p>}
       <div className="actions manager-dialog-actions">
         <Button type="button" className="secondary" onClick={close} disabled={busy}>Hủy</Button>
-        <Button type="submit" disabled={busy}>{busy ? 'Đang lưu…' : policy ? 'Lưu chính sách' : 'Tạo chính sách'}</Button>
+        <Button type="submit" disabled={busy || locked}>{busy ? 'Đang lưu…' : policy ? 'Lưu chính sách' : 'Tạo chính sách'}</Button>
       </div>
     </form>
   </ManagerDialog>;
@@ -134,10 +134,11 @@ export function ManagerSLA() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [editor, setEditor] = useState<Policy | 'new'>();
+  const [statePolicy,setStatePolicy]=useState<Policy>();
 
   useEffect(() => {
     let active = true;
-    setError('');
+    setError('');setBusy(true);
     Promise.all([managerApi<Page<Policy>>(`/sla?page=${page}&page_size=5`), managerApi<Catalog[]>('/catalog/priorities')])
       .then(([result, catalog]) => {
         if (!active) return;
@@ -182,15 +183,19 @@ export function ManagerSLA() {
           <thead><tr>{['Tên chính sách', 'Mức ưu tiên', 'Phản hồi', 'Xử lý', 'Hiệu lực', 'Phiếu tham chiếu', 'Thao tác']
             .map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
           <tbody>{data.items.map(policy => <tr key={policy.id}>
-            <td data-label="Tên chính sách"><strong>{policy.name}</strong></td>
+            <td data-label="Tên chính sách"><strong>{policy.name}</strong><small>SLA #{policy.id}</small></td>
             <td data-label="Mức ưu tiên"><span className={`manager-status manager-sla-priority-${priorityTones[policy.priority] ?? 'low'}`}>{policy.priority}</span></td>
             <td data-label="Phản hồi">{duration(policy.response_minutes)}</td>
             <td data-label="Xử lý">{duration(policy.resolution_minutes)}</td>
-            <td data-label="Hiệu lực"><span className={`manager-status manager-status-${policy.active ? 'active' : 'inactive'}`}>{policy.active ? 'Có hiệu lực' : 'Đã tắt'}</span></td>
+            <td data-label="Hiệu lực"><span className={`manager-status ${policy.active ? 'manager-status-active' : 'manager-sla-inactive'}`}>{policy.active ? 'Đang áp dụng' : 'Đã khóa / Chưa áp dụng'}</span></td>
             <td data-label="Phiếu tham chiếu">{policy.referenced}</td>
-            <td data-label="Thao tác">
+            <td data-label="Thao tác"><div className="manager-routing-actions">
               <Button type="button" className="secondary manager-icon-button" aria-label={`Chỉnh sửa ${policy.name}`} title="Chỉnh sửa"
                 disabled={busy} onClick={() => setEditor(policy)}><Pencil size={17} aria-hidden="true"/></Button>
+              <Button type="button" className="secondary manager-icon-button" title={policy.active ? 'Khóa chính sách' : 'Kích hoạt chính sách'}
+                aria-label={`${policy.active ? 'Khóa' : 'Kích hoạt'} ${policy.name}`} disabled={busy} onClick={() => setStatePolicy(policy)}>
+                {policy.active ? <Lock size={17} aria-hidden="true"/> : <LockOpen size={17} aria-hidden="true"/>}
+              </Button></div>
             </td>
           </tr>)}</tbody>
         </table>
@@ -201,6 +206,9 @@ export function ManagerSLA() {
       </div>}
       <ManagerPagination data={data} label="chính sách" move={move} busy={busy}/>
     </section>}
+    {statePolicy && <SLAStateDialog policyId={statePolicy.id} close={() => setStatePolicy(undefined)} saved={() => {
+      setStatePolicy(undefined);setNotice('Đã kích hoạt phiên bản mới. Chính sách và deadline phiếu cũ được giữ nguyên.');setRevision(v=>v+1);
+    }}/>}
     {editor && priorities && <SLAPolicyDialog policy={editor === 'new' ? undefined : editor} priorities={priorities}
       close={() => setEditor(undefined)} saved={() => {
         setNotice('Đã lưu chính sách. Hạn của phiếu hiện hữu được giữ nguyên.');
@@ -210,4 +218,36 @@ export function ManagerSLA() {
         setRevision(value => value + 1);
       }}/>}
   </>;
+}
+
+
+function SLAStateDialog({policyId,close,saved}:{policyId:string;close:()=>void;saved:()=>void}) {
+  const [data,setData]=useState<{policy:Policy;current:Policy|null}>();
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+  const gate=useRef(false);
+  const [revision,setRevision]=useState(0);
+  useEffect(()=>{let alive=true;setData(undefined);setError('');
+    managerApi<{policy:Policy;current:Policy|null}>(`/sla/${policyId}/state`).then(value=>{if(alive)setData(value);}).catch(e=>{if(alive)setError(e.message);});
+    return()=>{alive=false;};},[policyId,revision]);
+  async function activate() {
+    if(!data||gate.current||data.policy.active)return;
+    gate.current=true;setBusy(true);setError('');
+    try {
+      await managerApi(`/sla/${policyId}/state`,{method:'POST',body:JSON.stringify({active:true,expected:policyValues(data.policy),expected_active_id:data.current?.id??null})});
+      saved();
+    }catch(e){setError((e as Error).message);}finally{gate.current=false;setBusy(false);}
+  }
+  return <ManagerDialog title={data?.policy.active?'Khóa chính sách SLA':'Kích hoạt chính sách SLA'} busy={busy} onClose={close}>
+    {!data&&!error&&<p role="status">Đang kiểm tra phiên bản áp dụng…</p>}
+    {data&&<><h3>{data.policy.name} · #{data.policy.id}</h3><p>{data.policy.priority} · {data.policy.referenced} phiếu tham chiếu.</p>
+      {data.policy.active?<p className="notice">Không khóa đơn lẻ vì mức ưu tiên sẽ thiếu SLA. Hãy tạo chính sách thay thế rồi bấm Kích hoạt ở bản đó; hệ thống khóa bản cũ và kích hoạt bản mới trong một transaction.</p>:
+        <p>Bạn muốn áp dụng <strong>{data.policy.name}</strong>{data.current?<> thay cho <strong>{data.current.name} · #{data.current.id}</strong></>:<> cho mức ưu tiên này</>}?</p>}
+      <p>Phiếu đã gắn chính sách cũ giữ nguyên mã SLA, hạn phản hồi và hạn xử lý. Không tính lại SLA tạm tính của yêu cầu Mới.</p></>}
+    {error&&<p className="error-box" role="alert">{error}</p>}
+    <div className="actions manager-dialog-actions"><Button className="secondary" disabled={busy} onClick={close}>Hủy</Button>
+      {error&&<Button className="secondary" disabled={busy} onClick={()=>setRevision(v=>v+1)}>Tải lại phiên bản</Button>}
+      {data&&!data.policy.active&&<Button disabled={busy||!!error} onClick={()=>void activate()}>{busy?'Đang kích hoạt…':'Xác nhận kích hoạt'}</Button>}
+    </div>
+  </ManagerDialog>;
 }

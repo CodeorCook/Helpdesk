@@ -1,14 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
 import { Button, Input } from '../components';
 import { ManagerDialog, ManagerStatus } from './Dialog';
 import { ManagerPagination, lastPage } from './Pagination';
+import { SupportTypes } from './SupportTypes';
 import { GroupDialog } from './GroupDialog';
 import { managerApi, type Membership, type Page } from './api';
 import type { TicketCounts } from './metrics';
 
-export type Group = { id: string; name: string; description: string | null; active: boolean; members: number; pending: number };
+export type Group = { id: string; name: string; description: string | null; active: boolean; members: number; pending: number; type_count: number };
 export type GroupDetail = Group & {
   people: { id: string; name: string; status: string; workload: number; memberships?: Membership[] }[];
   types: { id: string; name: string }[];
@@ -65,7 +66,7 @@ function CreateGroup({ close, created }: { close: () => void; created: () => voi
   </ManagerDialog>;
 }
 
-export function ManagerGroups() {
+function GroupList() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<string>();
@@ -106,7 +107,7 @@ export function ManagerGroups() {
 
   return <>
     <div className="page-heading">
-      <div><h1>Nhóm hỗ trợ</h1><p>Quản lý nhóm chuyên môn, thành viên và khối lượng phiếu.</p></div>
+      <div><h2>Nhóm hỗ trợ</h2><p>Quản lý nhóm chuyên môn, thành viên và khối lượng phiếu.</p></div>
       <Button onClick={() => setCreating(true)}>Tạo nhóm hỗ trợ</Button>
     </div>
     {error && <p role="alert" className="error-box">{error}</p>}
@@ -114,11 +115,12 @@ export function ManagerGroups() {
     {data ? <section className="panel manager-list-panel" aria-label="Danh sách nhóm hỗ trợ">
       <div className="table-scroll manager-groups-table">
         <table className="ticket-table">
-          <thead><tr>{['Nhóm', 'Thành viên', 'Phiếu đang giao', 'Trạng thái', 'Thao tác'].map(label => <th key={label}>{label}</th>)}</tr></thead>
+          <thead><tr>{['Nhóm', 'Thành viên', 'Phiếu đang giao', 'Loại hỗ trợ phụ trách', 'Trạng thái', 'Thao tác'].map(label => <th key={label}>{label}</th>)}</tr></thead>
           <tbody>{data.items.map(group => <tr key={group.id}>
             <td data-label="Nhóm"><strong>{group.name}</strong><small>{group.description}</small></td>
             <td data-label="Thành viên">{group.members}</td>
             <td data-label="Phiếu đang giao">{group.pending}</td>
+            <td data-label="Loại hỗ trợ phụ trách">{group.type_count}/2{group.type_count > 2 && <small>Vượt giới hạn</small>}</td>
             <td data-label="Trạng thái"><ManagerStatus active={group.active} inactiveLabel="Đã vô hiệu hóa"/></td>
             <td data-label="Thao tác"><Button type="button" className="secondary manager-icon-button"
               aria-label={`Chỉnh sửa nhóm ${group.name}`} title="Chỉnh sửa nhóm" onClick={() => setEditing(group.id)}>
@@ -142,6 +144,17 @@ export function ManagerGroups() {
     {selected && <GroupDialog key={selected} id={selected} close={closeGroup}
       changed={() => setRevision(value => value + 1)}/>}
   </>;
+}
+
+export function ManagerGroups() {
+  const [query, setQuery] = useSearchParams();
+  const {id} = useParams();
+  const types = !id && query.get('tab') === 'types';
+  return <><h1>Nhóm và loại hỗ trợ</h1>
+    <nav className="manager-catalog-tabs" aria-label="Danh mục nhóm và loại hỗ trợ">
+      <button className={!types ? 'active' : ''} aria-current={!types ? 'page' : undefined} onClick={() => {const next=new URLSearchParams(query);next.delete('tab');setQuery(next);}}>Nhóm hỗ trợ</button>
+      <button className={types ? 'active' : ''} aria-current={types ? 'page' : undefined} onClick={() => {const next=new URLSearchParams(query);next.set('tab','types');setQuery(next);}}>Loại hỗ trợ</button>
+    </nav>{types ? <SupportTypes/> : <GroupList/>}</>;
 }
 
 export const ManagerGroup = ManagerGroups;

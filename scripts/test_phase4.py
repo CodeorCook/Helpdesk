@@ -17,13 +17,13 @@ from fastapi.testclient import TestClient
 from psycopg.rows import dict_row
 from core.database import get_connection,BASE_DIR
 from core.security import PASSWORD_HASHER
-from services import auth_service,customer_service,staff_service,manager_service as service
+from services import auth_service,customer_service,staff_service,support_type_service,manager_service as service
 from api.routes.auth import _attempts,_registrations
 from main import app
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--execute',action='store_true');parser.add_argument('--stage',choices=list('ABCDE'),default='A');parser.add_argument('--browser',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--execute',action='store_true');parser.add_argument('--stage',choices=list('ABCDE'),default='A');parser.add_argument('--browser',action='store_true');parser.add_argument('--support-types',action='store_true');parser.add_argument('--sla-versions',action='store_true');parser.add_argument('--escalations',action='store_true');args=parser.parse_args()
     if not args.execute:parser.error('Cần --execute; fixture thật được rollback, không seed tài khoản sử dụng.')
     prefix=secrets.token_hex(12);password=secrets.token_urlsafe(24)+'!9';origin={'Origin':'http://localhost:5173'}
     _attempts.clear();_registrations.clear()
@@ -39,7 +39,7 @@ def main():
         cur.execute(migration.split('BEGIN;', 1)[1].rsplit('COMMIT;', 1)[0])
         q("INSERT INTO {nguoi_dung}(ho_ten,email,mat_khau_hash,vai_tro) VALUES(%s,%s,%s,'QUAN_TRI_VIEN') RETURNING nd_ma",('Quản lý fixture '+prefix,f'manager-{prefix}@example.com',PASSWORD_HASHER.hash(password)))
         manager_id=cur.fetchone()['nd_ma'];q('INSERT INTO {quan_tri_vien}(nd_ma) VALUES(%s)',(manager_id,))
-        with patch.object(service,'get_connection',connection),patch.object(auth_service,'get_connection',connection),patch.object(customer_service,'get_connection',connection),patch.object(staff_service,'get_connection',connection):
+        with patch.object(support_type_service,'available',return_value=False),patch.object(service,'get_connection',connection),patch.object(auth_service,'get_connection',connection),patch.object(customer_service,'get_connection',connection),patch.object(staff_service,'get_connection',connection):
             admin=TestClient(app,raise_server_exceptions=False)
             def login(client,email):
                 r=client.post('/api/v1/auth/login',json={'email':email,'password':password},headers=origin);assert r.status_code==200,r.text;return r.json()['user']
@@ -65,7 +65,7 @@ def main():
             assert admin.post('/api/v1/manager/users',json=employee_body,headers=origin).status_code==403
             lock=dict(name=employee['name'],phone=None,status='KHOA',expected_updated_at=employee['updated_at'])
             assert post(admin,'manager/users/'+employee_id,{**lock,'lock_reason':'   '},'PATCH').status_code==422
-            assert post(admin,'manager/users/'+employee_id,{**lock,'lock_reason':'Đối chiếu thông tin tài khoản'},'PATCH').status_code==200
+            lock_response=post(admin,'manager/users/'+employee_id,{**lock,'lock_reason':'Đối chiếu thông tin tài khoản'},'PATCH');assert lock_response.status_code==200,lock_response.text
             assert employee_client.get('/api/v1/auth/me').status_code==401
             rejected=employee_client.post('/api/v1/auth/login',json={'email':employee_body['email'],'password':password},headers=origin)
             assert rejected.status_code==403 and 'Đối chiếu thông tin tài khoản' in rejected.json()['detail']
@@ -142,6 +142,9 @@ def main():
             priority=q('SELECT i FROM generate_series(30000,32767) i WHERE NOT EXISTS(SELECT 1 FROM {muc_do_uu_tien} WHERE mdut_ma=i OR thu_tu=i) LIMIT 1').fetchone()['i']
             q('INSERT INTO {muc_do_uu_tien}(mdut_ma,ten,thu_tu) VALUES(%s,%s,%s)',(priority,'Fixture SLA '+prefix,priority))
             os.environ['DEFAULT_PRIORITY_ORDER']=str(priority)
+            policy_body=dict(name='SLA fixture '+prefix,priority_id=priority,response_minutes=30,resolution_minutes=120,active=True)
+            bootstrap=post(admin,'manager/sla',policy_body);assert bootstrap.status_code==201,bootstrap.text
+            bootstrap_policy=bootstrap.json()
             r=post(customer,'customer/tickets',dict(title='Bảo hành sofa phase4',description='Chân sofa cần kiểm tra',type_id=type_id));assert r.status_code==201,r.text;ticket_id=r.json()['id']
             recommended=employee_client.get('/api/v1/staff/tickets?scope=recommended').json()
             item=next(t for t in recommended['items'] if t['id']==ticket_id);assert item['recommended'] and item['assigned_id'] is None
@@ -243,6 +246,12 @@ def main():
                 assert not other.fetchone()[0]
             print('PASS routing: 3→2, rejects third, same-group no-op, move and reassign, stale/CSRF/role/audit, category and ticket history preserved, unassigned intake then suggestion, coordination lock across connections.')
             print('PASS B: exclusive membership; explicit legacy duplicate resolution and atomic group move; active assignments block move/removal; routing and approval.')
+            if args.support_types:
+                from support_type_checks import run
+                run(admin,employee_client,customer,post,cur,prefix,ticket_id,get_connection)
+            if args.sla_versions:
+                from sla_version_checks import run
+                run(admin,employee_client,customer,post,cur,prefix,ticket_id,priority,type_id,bootstrap_policy,get_connection)
             if args.stage=='B':return
             r=post(admin,'manager/users',{**employee_body,'name':'Nhân viên thứ hai '+prefix,'email':f'employee2-{prefix}@example.com'});assert r.status_code==201,r.text;employee2=r.json()['id']
             assert post(admin,f'manager/groups/{group_id}/members',dict(employee_id=employee2)).status_code==200
@@ -263,17 +272,22 @@ def main():
             detail=admin.get('/api/v1/manager/tickets/'+ticket_id).json()
             assert post(second,f'manager/tickets/{ticket_id}/assignment',assignment_body(detail,group_id,employee2)).status_code==403
             assert admin.post(f'/api/v1/manager/tickets/{ticket_id}/assignment',json=assignment_body(detail,group_id,employee2),headers=origin).status_code==403
-            assert post(admin,f'manager/tickets/{ticket_id}/assignment',assignment_body(detail,group_id,None)).json()['status']=='MOI'
-            assert q('SELECT count(*) n FROM {lich_su_phan_cong} WHERE phieu_ma=%s AND ket_thuc IS NULL',(ticket_id,)).fetchone()['n']==0
-            assert approve(employee_client,ticket_id).status_code==200
+            assert post(admin,f'manager/tickets/{ticket_id}/assignment',assignment_body(detail,group_id,None)).status_code==422
+            reassigned=post(admin,f'manager/tickets/{ticket_id}/assignment',assignment_body(detail,group_id,employee_id))
+            assert reassigned.status_code==200 and reassigned.json()['status']=='DANG_XU_LY',reassigned.text
+            assert approve(employee_client,ticket_id).status_code==409
             assert q('SELECT count(*) n FROM {lich_su_phan_cong} WHERE phieu_ma=%s AND ket_thuc IS NULL',(ticket_id,)).fetchone()['n']==1
             assert admin.get('/api/v1/manager/tickets',params={'search':ticket_id,'group':group_id,'employee':employee_id}).json()['total']==1
             assert admin.get('/api/v1/manager/tickets',params={'search':"' OR 1=1 --"}).json()['total']==0
-            print('PASS C: manager detail/filters; same-group and cross-group reassignment; stale409; outside-role/CSRF; assignment failure rollback; queue release MOI and staff accepts same ID; history preserved with one active assignment.')
+            print('PASS C: manager detail/filters; same-group and cross-group reassignment; stale409; outside-role/CSRF; assignment failure rollback; approved ticket cannot return to MOI; concrete recipient keeps same ID/status; history preserved with one active assignment.')
+            if args.escalations:
+                from escalation_checks import run
+                run(admin,employee_client,second,privileged,customer,post,cur,prefix,ticket_id,group_id,employee2,extra_group['id'],unused['id'])
             if args.stage=='C':return
+            q('UPDATE {phieu_ho_tro} SET sla_ma=NULL,han_phan_hoi=NULL,han_xu_ly=NULL WHERE phieu_ma=%s',(ticket_id,))
             assert admin.get('/api/v1/manager/tickets/'+ticket_id).json()['sla_state']=='Chưa cấu hình SLA'
             policy_body=dict(name='SLA fixture '+prefix,priority_id=priority,response_minutes=30,resolution_minutes=120,active=True)
-            r=post(admin,'manager/sla',policy_body);assert r.status_code==201,r.text;policy=r.json();policy_id=policy['id']
+            policy=bootstrap_policy;policy_id=policy['id']
             assert post(admin,'manager/sla',policy_body).status_code==409
             assert post(admin,'manager/sla',{**policy_body,'response_minutes':0}).status_code==422
             assert post(employee_client,'manager/sla',policy_body).status_code==403
@@ -284,7 +298,7 @@ def main():
             assert post(admin,f'manager/tickets/{ticket_id}/sla',apply).status_code==200
             assert post(admin,f'manager/tickets/{ticket_id}/sla',apply).status_code==409
             r=post(customer,'customer/tickets',dict(title='Phiếu SLA tự áp dụng',description='Fixture private priority',type_id=type_id));assert r.status_code==201,r.text;new_ticket_id=r.json()['id']
-            applied=admin.get('/api/v1/manager/tickets/'+new_ticket_id).json();assert applied['sla_state']=='Sắp quá hạn' and applied['sla_name']==policy_body['name']
+            applied=admin.get('/api/v1/manager/tickets/'+new_ticket_id).json();assert applied['sla_state']=='Sắp quá hạn' and applied['sla_name']==policy_body['name'],(applied['sla_state'],applied['sla_name'],policy_body['name'])
             deltas=q('SELECT EXTRACT(epoch FROM (han_phan_hoi-ngay_tao))/60 a,EXTRACT(epoch FROM (han_xu_ly-ngay_tao))/60 b FROM {phieu_ho_tro} WHERE phieu_ma=%s',(new_ticket_id,)).fetchone();assert deltas['a']==30 and deltas['b']==120
             assert post(admin,f'manager/sla/{policy_id}',{**policy_body,'resolution_minutes':180,'expected':policy_body},'PATCH').status_code==409
             for delta,label,code in [(120,'Trong hạn','within'),(30,'Sắp quá hạn','soon'),(-1,'Quá hạn','overdue')]:
@@ -295,8 +309,11 @@ def main():
                 assert filtered['total']==1 and filtered['items'][0]['id']==new_ticket_id
                 assert admin.get('/api/v1/manager/tickets',params={**query,'sla_state':'none'}).json()['total']==0
             previous=admin.get('/api/v1/manager/tickets/'+ticket_id).json()['resolution_due']
-            assert post(admin,f'manager/sla/{policy_id}',{**policy_body,'active':False,'expected':policy_body},'PATCH').status_code==200
-            assert post(admin,'manager/sla',{**policy_body,'name':'SLA v2 fixture '+prefix,'resolution_minutes':240}).status_code==201
+            assert post(admin,f'manager/sla/{policy_id}',{**policy_body,'active':False,'expected':policy_body},'PATCH').status_code==409
+            next_policy=post(admin,'manager/sla',{**policy_body,'name':'SLA v2 fixture '+prefix,'resolution_minutes':240,'active':False});assert next_policy.status_code==201,next_policy.text
+            next_policy=next_policy.json()
+            expected={k:next_policy[k] for k in ['name','priority_id','response_minutes','resolution_minutes','active']}
+            assert post(admin,f"manager/sla/{next_policy['id']}/state",dict(active=True,expected=expected,expected_active_id=policy_id)).status_code==200
             assert admin.get('/api/v1/manager/tickets/'+ticket_id).json()['resolution_due']==previous
             old=admin.get('/api/v1/manager/tickets/'+ticket_id).json()
             assert post(admin,f'manager/tickets/{ticket_id}/sla',dict(expected_updated_at=old['updated_at'],confirmed=True,recalculate=True)).status_code==200
@@ -347,6 +364,44 @@ def main():
             assert employee_client.get(f'/api/v1/staff/tickets/{ticket_id}/attachments/{attachment_id}').content==b'Kiem tra sofa'
             assert admin.get(f'/api/v1/manager/tickets/{ticket_id}/attachments/{attachment_id}').content==b'Kiem tra sofa'
             print('PASS D: SLA priority-only, continuous minutes; unique active policy; immutable used policies; new-ticket deadlines exact; old deadlines unchanged unless explicit recalc; within/soon/overdue/missing; internal notes do not set first response; staff/manager real download.')
+            with conn.transaction(force_rollback=True):
+                from services.report_service import report_period
+                before = admin.get('/api/v1/manager/overview?preset=today').json()
+                fixture_type=q('INSERT INTO {loai_ho_tro}(ten) VALUES(%s) RETURNING ht_ma',('Dashboard '+prefix,)).fetchone()['ht_ma']
+                fixture_ids=[]
+                for _ in range(7):
+                    created=post(customer,'customer/tickets',dict(title='Dashboard intervention',description='Rollback fixture',type_id=type_id))
+                    assert created.status_code==201,created.text
+                    fixture_ids.append(created.json()['id'])
+                q("""UPDATE {phieu_ho_tro} SET ht_ma=%s,sla_ma=%s,han_phan_hoi=now()+interval '2 hours',
+                    han_xu_ly=now()+interval '3 hours' WHERE phieu_ma=ANY(%s::bigint[])""",(fixture_type,policy_id,fixture_ids))
+                # Overdue must be first even when other records were created more recently.
+                q("UPDATE {phieu_ho_tro} SET han_phan_hoi=now()-interval '1 second' WHERE phieu_ma=%s",(fixture_ids[0],))
+                after = admin.get('/api/v1/manager/overview?preset=today')
+                assert after.status_code==200,after.text
+                result=after.json()
+                assert result['total']==before['total']+7
+                assert sum(item['count'] for item in result['segments'])==result['total']
+                old={row['code']:row['count'] for row in before['segments']}
+                new={row['code']:row['count'] for row in result['segments']}
+                assert new['overdue']==old.get('overdue',0)+1 and new['waiting']==old.get('waiting',0)+6
+                start,end=report_period('today',None,None)
+                params=dict(type=fixture_type,sort='intervention',dashboard_segment='attention',
+                            **{'from':start.isoformat(),'to':end.isoformat()},page_size=5)
+                first=admin.get('/api/v1/manager/tickets',params=params).json()
+                second_page=admin.get('/api/v1/manager/tickets',params={**params,'page':2}).json()
+                assert first['total']==7 and first['items'][0]['id']==fixture_ids[0] and len(second_page['items'])==2
+                assert admin.get('/api/v1/manager/tickets',params={**params,'dashboard_segment':'overdue'}).json()['total']==1
+                assert admin.get('/api/v1/manager/tickets',params={**params,'dashboard_segment':'waiting'}).json()['total']==6
+                q("UPDATE {phieu_ho_tro} SET ngay_tao=ngay_tao-interval '1 day' WHERE phieu_ma=%s",(fixture_ids[1],))
+                today=admin.get('/api/v1/manager/overview?preset=today').json()
+                week=admin.get('/api/v1/manager/overview?preset=7d').json()
+                month=admin.get('/api/v1/manager/overview?preset=month').json()
+                assert today['total']==result['total']-1 and week['total']>=result['total']
+                assert week['period_start']==report_period('7d',None,None)[0].isoformat()
+                assert month['period_start']==report_period('month',None,None)[0].isoformat()
+                assert employee_client.get('/api/v1/manager/overview?preset=today').status_code==403
+                print('PASS Bento period cohorts, disjoint donut segments, intervention priority before pagination, role boundary')
             if args.stage=='D':return
             r=admin.get('/api/v1/manager/reports',params={'search':ticket_id,'employee':employee_id,'page_size':1});assert r.status_code==200,r.text;report=r.json()
             assert report['summary']['total']==1 and report['summary']['processing']==1 and report['total']==1

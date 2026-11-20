@@ -105,7 +105,7 @@ export function StaffQueue() {
               {ticket.recommended && <span className="badge staff-recommended-badge">Ưu tiên cho bạn</span>}</td>
             <td data-label="Loại hỗ trợ">{ticket.type_name ?? 'Chưa phân loại'}</td>
             <td data-label="Thời điểm gửi">{formatDate(ticket.created_at)}</td>
-            <td data-label="Trạng thái chờ">{timing ? <div className={`queue-clock queue-tone-${timing.tone}`} title="Theo hạn phản hồi tạm tính đã lưu">
+            <td data-label="Trạng thái chờ">{timing ? <div className={`queue-clock queue-tone-${timing.tone}`} title={ticket.sla_phase === 'provisional' ? 'Theo hạn phản hồi tạm tính đã lưu' : 'Theo hạn đã lưu; dữ liệu cũ chưa xác định tạm tính/chính thức'}>
               <span className="queue-clock-badge">{labels[timing.tone]}</span>
               <small>{timing.tone === 'overdue' ? 'Quá hạn ' : ''}{timing.time}</small>
             </div> : <span className="muted">Chưa có hạn</span>}</td>

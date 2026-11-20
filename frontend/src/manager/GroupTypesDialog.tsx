@@ -1,165 +1,92 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowRightLeft, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '../components';
 import { managerApi } from './api';
 import { ManagerDialog, ManagerStatus } from './Dialog';
 import { allGroups, type Group } from './Groups';
+import type { SupportType } from './SupportTypes';
 
-type Mapping = {
-  type_id: string;
-  type_name: string;
-  type_active: boolean;
-  group_id: string | null;
-  waiting: number;
-};
-type RoutingData = { rows: Mapping[]; groups: Group[] };
-type Change = { kind: 'remove' | 'move'; row: Mapping };
-const limit = 2;
+type Data = {available:boolean;items:SupportType[];groups:Group[]};
+type Change = {kind:'remove'|'default'|'clear';row:SupportType};
 
-async function loadRouting(): Promise<RoutingData> {
-  const [rows, groups] = await Promise.all([managerApi<Mapping[]>('/routing'), allGroups()]);
-  return { rows, groups };
-}
-
-export function GroupTypesDialog({ groupId, close, onTypes }: {
-  groupId: string;
-  close: () => void;
-  onTypes: (types: { id: string; name: string }[]) => void;
-}) {
-  const [data, setData] = useState<RoutingData>();
-  const [change, setChange] = useState<Change>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const request = useRef(false);
-  const feedback = useRef<HTMLParagraphElement>(null);
-
-  useEffect(() => {
-    let active = true;
-    loadRouting().then(result => { if (active) setData(result); })
-      .catch(e => { if (active) setError(e.message); });
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    if (notice && !busy) feedback.current?.focus();
-  }, [notice, busy]);
-
-  const group = data?.groups.find(item => item.id === groupId);
-  const rows = data?.rows ?? [];
-  const assigned = rows.filter(row => row.group_id === groupId);
-  const unassigned = rows.filter(row => !row.group_id && row.type_active);
-  const counts = new Map<string, number>();
-  for (const row of rows) {
-    if (row.group_id) counts.set(row.group_id, (counts.get(row.group_id) ?? 0) + 1);
+export function GroupTypesDialog({groupId,close,onTypes}:{groupId:string;close:()=>void;onTypes:(types:{id:string;name:string}[])=>void}) {
+  const [data,setData]=useState<Data>();
+  const [change,setChange]=useState<Change>();
+  const [busy,setBusy]=useState(false);
+  const gate=useRef(false);
+  const [error,setError]=useState('');
+  const [notice,setNotice]=useState('');
+  async function load() {
+    const [catalog,groups]=await Promise.all([managerApi<Omit<Data,'groups'>>(`/groups/${groupId}/support-types`),allGroups()]);
+    return {...catalog,groups};
   }
-  const targets = data?.groups.filter(item => item.id !== groupId && item.active && (counts.get(item.id) ?? 0) < limit) ?? [];
-
-  function replaceData(result: RoutingData) {
-    setData(result);
-    onTypes(result.rows.filter(row => row.group_id === groupId)
-      .map(row => ({ id: row.type_id, name: row.type_name })));
-  }
-
-  async function mutate(row: Mapping, destination: string | null) {
-    if (!data || request.current) return;
-    request.current = true;
-    setBusy(true);
-    setNotice('');
-    setError('');
+  useEffect(()=>{let alive=true;load().then(result=>{if(alive)setData(result);}).catch(e=>{if(alive)setError(e.message);});return()=>{alive=false;};},[groupId]);
+  const group=data?.groups.find(g=>g.id===groupId);
+  const assigned=data?.items.filter(t=>t.groups.some(g=>g.id===groupId))??[];
+  const eligible=data?.items.filter(t=>t.active&&!t.groups.some(g=>g.id===groupId))??[];
+  async function mutate(path:string,method:string,body?:unknown) {
+    if(gate.current)return;
+    gate.current=true;setBusy(true);setError('');setNotice('');
     try {
-      const endpoint = `/routing/${row.type_id}`;
-      const result = await (destination === null
-        ? managerApi<{ message: string }>(`${endpoint}?expected_group_id=${row.group_id}`, { method: 'DELETE' })
-        : managerApi<{ message: string }>(endpoint, {
-          method: 'PATCH',
-          body: JSON.stringify({ group_id: destination, expected_group_id: row.group_id }),
-        }));
-      setChange(undefined);
-      setNotice(result.message);
-      replaceData({ ...data, rows: data.rows.map(item => item.type_id === row.type_id
-        ? { ...item, group_id: destination } : item) });
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    try {
-      replaceData(await loadRouting());
-    } catch {
-      setError(previous => previous || 'Chưa tải lại được ánh xạ. Hãy đóng và mở lại hộp thoại để kiểm tra dữ liệu mới nhất.');
-    } finally {
-      request.current = false;
-      setBusy(false);
-    }
+      const result=await managerApi<{message:string}>(path,{method,...(body?{body:JSON.stringify(body)}:{})});
+      setChange(undefined);setNotice(result.message);
+      const next=await load();setData(next);
+      onTypes(next.items.filter(t=>t.groups.some(g=>g.id===groupId)).map(t=>({id:t.id,name:t.name})));
+    } catch(e){setError((e as Error).message);}
+    finally{gate.current=false;setBusy(false);}
   }
-
-  function confirm(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!change) return;
-    const destination = change.kind === 'remove' ? null : String(new FormData(event.currentTarget).get('destination'));
-    void mutate(change.row, destination);
+  function confirm() {
+    if(!change)return;
+    const {row,kind}=change;
+    const current=row.groups.find(g=>g.is_default)?.id??null;
+    if(kind==='remove')void mutate(`/groups/${groupId}/support-types/${row.id}`,'DELETE');
+    else if(kind==='clear')void mutate(`/routing/${row.id}?expected_group_id=${current}`,'DELETE');
+    else void mutate(`/routing/${row.id}`,'PATCH',{group_id:groupId,expected_group_id:current});
   }
-
   return <>
-    <ManagerDialog title="Cập nhật loại yêu cầu" onClose={close} busy={busy || !!change}>
-      {!data && !error && <p role="status">Đang tải ánh xạ…</p>}
-      {error && !change && <p role="alert" className="error-box">{error}</p>}
-      {notice && <p ref={feedback} tabIndex={-1} role="status" className="success-box">{notice}</p>}
-      {group && <>
-        <div className="manager-section-heading"><h3>{group.name}</h3><ManagerStatus active={group.active} inactiveLabel="Đã vô hiệu hóa"/></div>
-        <p><strong>{assigned.length}/{limit} loại yêu cầu{assigned.length > limit ? ' – Vượt giới hạn' : ''}</strong></p>
-        {assigned.length > limit && <p className="notice">Nhóm hiện đang phụ trách nhiều hơn 2 loại yêu cầu. Vui lòng bỏ bớt hoặc chuyển loại yêu cầu sang nhóm khác.</p>}
-        {assigned.length ? <ul className="manager-routing-list">{assigned.map(row => <li key={row.type_id}>
-          <span>{row.type_name}{!row.type_active && <small> · Đã ngừng</small>}</span>
-          <div className="manager-routing-actions">
-            <Button type="button" className="secondary manager-icon-button" title="Chuyển sang nhóm khác"
-              aria-label={`Chuyển ${row.type_name} sang nhóm khác`} disabled={busy || !targets.length}
-              onClick={() => { setError(''); setChange({ kind: 'move', row }); }}><ArrowRightLeft size={17} aria-hidden="true"/></Button>
-            <Button type="button" className="secondary manager-icon-button" title="Bỏ khỏi nhóm"
-              aria-label={`Bỏ khỏi nhóm: ${row.type_name}`} disabled={busy}
-              onClick={() => { setError(''); setChange({ kind: 'remove', row }); }}><Trash2 size={17} aria-hidden="true"/></Button>
-          </div>
-        </li>)}</ul> : <p>Nhóm chưa phụ trách loại yêu cầu nào.</p>}
-        {!targets.length && assigned.length > 0 && <p className="muted">Chưa có nhóm đích đang hoạt động và còn chỗ.</p>}
-        {assigned.length >= limit && <p className="muted">Nhóm đã đạt giới hạn tối đa 2 loại yêu cầu. Vui lòng bỏ bớt loại hiện tại trước khi thêm mới.</p>}
-        {!group.active && <p className="muted">Nhóm cần hoạt động để nhận loại yêu cầu mới.</p>}
-        <form className="manager-form" onSubmit={event => {
-          event.preventDefault();
-          const id = new FormData(event.currentTarget).get('type_id');
-          const row = unassigned.find(item => item.type_id === id);
-          if (row) void mutate(row, groupId);
-        }}>
-          <label className="field">Loại yêu cầu chưa có nhóm mặc định
-            <select name="type_id" required defaultValue="" disabled={busy || !unassigned.length}>
-              <option value="">Chọn loại yêu cầu</option>
-              {unassigned.map(row => <option key={row.type_id} value={row.type_id}>{row.type_name} · {row.waiting} phiếu chờ</option>)}
-            </select>
-          </label>
-          <Button disabled={busy || !group.active || assigned.length >= limit || !unassigned.length}>Thêm loại yêu cầu</Button>
+    <ManagerDialog title="Cập nhật loại hỗ trợ" busy={busy||!!change} onClose={close} wide>
+      {error&&!change&&<p className="error-box" role="alert">{error}</p>}
+      {notice&&<p className="success-box" role="status">{notice}</p>}
+      {!data&&!error&&<p role="status">Đang tải loại hỗ trợ…</p>}
+      {data&&group&&<>
+        <div className="manager-section-heading"><h3>{group.name}</h3><ManagerStatus active={group.active} inactiveLabel="Ngừng hoạt động"/></div>
+        <p><strong>{assigned.length}/2 loại hỗ trợ{assigned.length>2?' – Vượt giới hạn':''}</strong></p>
+        {assigned.length>2&&<p className="notice">Vui lòng chủ động bỏ bớt quan hệ phụ trách. Hệ thống không tự xóa hoặc chuyển loại.</p>}
+        {!data.available&&<p className="notice" role="status">CSDL chưa có quan hệ nhiều nhóm cùng phụ trách. Cần áp dụng migration 006_group_support_types.sql sau khi được duyệt. Hiện đang hiển thị các nhóm mặc định; không thể thêm quan hệ chuyên môn mới.</p>}
+        <p className="muted">Nhiều nhóm có thể cùng chuyên môn. Chỉ một nhóm mặc định tiếp nhận yêu cầu mới; thêm chuyên môn không tự đổi định tuyến.</p>
+        <ul className="manager-routing-list">{assigned.map(row=>{
+          const current=row.groups.find(g=>g.is_default);
+          return <li key={row.id}><div><strong>{row.name}</strong>{!row.active&&<small>Ngừng hoạt động</small>}
+            <small>Nhóm mặc định: {current?.name??'Chưa cấu hình'}</small>
+            <small>Cùng phụ trách: {row.groups.map(g=>g.name).join(', ')}</small></div>
+            <div className="manager-routing-actions">
+              {current?.id===groupId?<Button className="secondary" disabled={busy} onClick={()=>{setError('');setChange({kind:'clear',row});}}>Bỏ mặc định</Button>:
+                <Button className="secondary" disabled={busy||!row.active||!group.active||!data.available} onClick={()=>{setError('');setChange({kind:'default',row});}}>Đặt làm mặc định</Button>}
+              <Button className="secondary manager-icon-button" title={current?.id===groupId?'Bỏ hoặc đổi nhóm mặc định trước':'Bỏ quan hệ phụ trách'} aria-label={`Bỏ quan hệ phụ trách ${row.name}`}
+                disabled={busy||!data.available||current?.id===groupId} onClick={()=>{setError('');setChange({kind:'remove',row});}}><Trash2 size={17}/></Button>
+            </div></li>;
+        })}</ul>
+        {!assigned.length&&<p>Nhóm chưa phụ trách loại hỗ trợ nào.</p>}
+        {assigned.length>=2&&<p className="notice">Nhóm đã đạt giới hạn tối đa 2 loại hỗ trợ. Hãy bỏ bớt trước khi thêm mới.</p>}
+        <form className="manager-form" onSubmit={e=>{e.preventDefault();const id=String(new FormData(e.currentTarget).get('type_id'));if(id)void mutate(`/groups/${groupId}/support-types/${id}`,'POST');}}>
+          <label className="field">Thêm nhóm cùng phụ trách<select name="type_id" required defaultValue="" disabled={busy||!data.available||!eligible.length||assigned.length>=2||!group.active}>
+            <option value="">Chọn loại hỗ trợ đang hoạt động</option>{eligible.map(t=><option key={t.id} value={t.id}>{t.name} · {t.groups.length} nhóm đang phụ trách</option>)}
+          </select></label>
+          {data.available&&!eligible.length&&<p className="muted">Không còn loại đang hoạt động chưa thuộc nhóm này. Có thể thêm danh mục tại tab Loại hỗ trợ.</p>}
+          <Button disabled={busy||!data.available||!eligible.length||assigned.length>=2||!group.active}>Thêm loại hỗ trợ</Button>
         </form>
       </>}
       <div className="actions manager-dialog-actions"><Button className="secondary" disabled={busy} onClick={close}>Đóng</Button></div>
     </ManagerDialog>
-    {change && group && <ManagerDialog title={change.kind === 'remove' ? 'Xác nhận bỏ ánh xạ' : 'Chuyển nhóm phụ trách'}
-      busy={busy} onClose={() => setChange(undefined)}>
-      <form className="manager-form" onSubmit={confirm}>
-        <p>Loại yêu cầu <strong>{change.row.type_name}</strong></p>
-        <p>Nhóm hiện tại <strong>{group.name}</strong></p>
-        {change.kind === 'remove' ? <p>Loại yêu cầu sẽ tạm thời không có nhóm xử lý mặc định cho đến khi được gán lại.</p> :
-          <label className="field">Nhóm đích
-            <select required name="destination" defaultValue="" disabled={busy}>
-              <option value="">Chọn nhóm đang hoạt động và còn chỗ</option>
-              {targets.map(item => <option value={item.id} key={item.id}>{item.name} ({counts.get(item.id) ?? 0}/{limit})</option>)}
-            </select>
-          </label>}
-        <p className="muted">Phiếu đã tiếp nhận giữ nguyên nhóm và người phụ trách.</p>
-        {error && <p role="alert" className="error-box">{error}</p>}
-        <div className="actions manager-dialog-actions">
-          <Button type="button" className="secondary" disabled={busy} onClick={() => setChange(undefined)}>Hủy</Button>
-          <Button disabled={busy || !assigned.some(row => row.type_id === change.row.type_id)}>
-            {busy ? 'Đang xử lý…' : change.kind === 'remove' ? 'Xác nhận bỏ ánh xạ' : 'Xác nhận chuyển'}
-          </Button>
-        </div>
-      </form>
+    {change&&<ManagerDialog title={change.kind==='remove'?'Xác nhận bỏ quan hệ phụ trách':change.kind==='clear'?'Xác nhận bỏ nhóm mặc định':'Xác nhận thay đổi nhóm mặc định'} busy={busy} onClose={()=>setChange(undefined)}>
+      <p>Loại hỗ trợ: <strong>{change.row.name}</strong></p><p>Nhóm: <strong>{group?.name}</strong></p>
+      {change.kind==='clear'?<p>Loại này tạm thời không có nhóm mặc định. Yêu cầu Mới chưa chốt nhóm sẽ chờ Quản lý cấu hình lại. Quan hệ chuyên môn vẫn được giữ.</p>:
+        change.kind==='default'?<p>Chuyển mặc định từ <strong>{change.row.groups.find(g=>g.is_default)?.name??'Chưa cấu hình'}</strong> sang <strong>{group?.name}</strong>. Các nhóm cùng chuyên môn vẫn được giữ.</p>:
+        <p>Chỉ bỏ quan hệ chuyên môn giữa nhóm và loại này. Không xóa danh mục hoặc phiếu.</p>}
+      <p className="muted">Phiếu đã tiếp nhận giữ nguyên nhóm, người phụ trách và lịch sử.</p>
+      {error&&<p className="error-box" role="alert">{error}</p>}
+      <div className="actions"><Button className="secondary" disabled={busy} onClick={()=>setChange(undefined)}>Hủy</Button>
+        <Button disabled={busy} onClick={confirm}>{busy?'Đang xử lý…':'Xác nhận'}</Button></div>
     </ManagerDialog>}
   </>;
 }

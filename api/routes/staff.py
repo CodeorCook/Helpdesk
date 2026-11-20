@@ -144,3 +144,26 @@ def conversation(ticket_id:int=Path(gt=0,le=9223372036854775807),after:int|None=
 def preview_attachment(ticket_id:int=Path(gt=0,le=9223372036854775807),attachment_id:int=Path(gt=0,le=9223372036854775807),user:UserResponse=Depends(staff)):
     path,name,mime=conversation_service.preview('staff',user.id,ticket_id,attachment_id)
     return FileResponse(path,filename=name,media_type=mime,content_disposition_type='inline',headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox"})
+
+
+@router.get('/sla-preview')
+def sla_preview(priority_id:int=Query(...,gt=0,le=32767),user:UserResponse=Depends(staff)):
+    with service.staff_cursor(user.id) as cur:
+        service.execute(cur, 'SELECT mdut_ma FROM {muc_do_uu_tien} WHERE mdut_ma=%s',(priority_id,))
+        if cur.fetchone() is None:raise HTTPException(422,'Mức ưu tiên không hợp lệ.')
+        service.execute(cur, "SELECT sla_ma::text id,ten name,thoi_gian_phan_hoi_phut response_minutes,thoi_gian_xu_ly_phut resolution_minutes FROM {chinh_sach_sla} WHERE mdut_ma=%s AND dang_hoat_dong",(priority_id,))
+        return {'policy':cur.fetchone()}
+
+
+from schemas.staff import Escalation, EscalationRequest
+from services import escalation_service
+
+
+@router.post('/tickets/{ticket_id}/escalations',response_model=Escalation,status_code=201,dependencies=[Depends(mutation_guard)])
+def escalate(body:EscalationRequest,ticket_id:int=ID(),user:UserResponse=Depends(staff)):
+    return escalation_service.request(user.id,ticket_id,body)
+
+
+@router.get('/tickets/{ticket_id}/escalations',response_model=list[Escalation])
+def escalation_history(ticket_id:int=ID(),user:UserResponse=Depends(staff)):
+    return escalation_service.staff_history(user.id,ticket_id)

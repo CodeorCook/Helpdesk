@@ -14,6 +14,11 @@ export type Overview = TicketCounts & {
   by_priority: NamedCount[];
 };
 export type DashboardOverview = Overview & {
+  escalation_available?:boolean;pending_escalations?:number|null;
   by_week: NamedCount[];
   by_month: NamedCount[];
+  segments: {code:string;count:number}[];
+  workload: NamedCount[];
+  period_start: string|null;
+  period_end: string|null;
 };

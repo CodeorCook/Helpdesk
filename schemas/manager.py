@@ -78,6 +78,7 @@ class GroupUpdate(GroupInput):
 
 
 class Group(BaseModel):
+    type_count: int = 0
     id: str
     name: str
     description: str | None
@@ -150,6 +151,7 @@ class RoutingInput(StrictInput):
 
 
 class AssignmentInput(StrictInput):
+    expected_escalation_id: int | None = Field(default=None,gt=0,le=ID_MAX)
     group_id: int = Field(gt=0,le=ID_MAX)
     employee_id: int | None = Field(default=None,gt=0,le=ID_MAX)
     expected_assignment_id: int | None = Field(default=None,gt=0,le=ID_MAX)
@@ -167,7 +169,7 @@ class SLAInput(StrictInput):
     priority_id: int = Field(gt=0,le=32767)
     response_minutes: int = Field(gt=0,le=2147483647)
     resolution_minutes: int = Field(gt=0,le=2147483647)
-    active: bool = True
+    active: bool = False
     @field_validator('name')
     @classmethod
     def nonblank(cls,value):
@@ -177,6 +179,12 @@ class SLAInput(StrictInput):
     def durations(self):
         if self.resolution_minutes<self.response_minutes:raise ValueError('Thời gian xử lý phải lớn hơn hoặc bằng thời gian phản hồi (phút).')
         return self
+
+
+class SLAStateChange(StrictInput):
+    active: bool
+    expected: SLAInput
+    expected_active_id: int | None = Field(default=None, gt=0, le=ID_MAX)
 
 
 class SLAUpdate(SLAInput):
@@ -216,9 +224,20 @@ class ManagerOverview(TicketCounts):
     by_priority: list[NamedCount]
 
 
+class DashboardSegment(BaseModel):
+    code: str
+    count: int
+
+
 class DashboardOverview(ManagerOverview):
+    escalation_available: bool = False
+    pending_escalations: int | None = None
     by_week: list[NamedCount]
     by_month: list[NamedCount]
+    segments: list[DashboardSegment] = Field(default_factory=list)
+    workload: list[NamedCount] = Field(default_factory=list)
+    period_start: date | None = None
+    period_end: date | None = None
 
 
 class Performance(BaseModel):
@@ -314,3 +333,63 @@ class ReportAnalytics(BaseModel):
     groups: list[AnalyticsGroup]
     rating_distribution: list[RatingBucket]
     trend: list[AnalyticsPoint]
+
+
+class SupportTypeState(StrictInput):
+    name: str = Field(min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=5000)
+    active: bool = True
+
+
+class SupportTypeInput(SupportTypeState):
+    @field_validator('name')
+    @classmethod
+    def clean_name(cls, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise ValueError('Tên loại hỗ trợ không được trống.')
+        return value
+
+
+class SupportTypeUpdate(SupportTypeInput):
+    expected: SupportTypeState
+
+
+class SupportTypeDelete(StrictInput):
+    expected: SupportTypeState
+
+
+class ExpertiseGroup(BaseModel):
+    id: str
+    name: str
+    is_default: bool
+
+
+class SupportType(SupportTypeState):
+    id: str
+    groups: list[ExpertiseGroup]
+    tickets: int
+    waiting: int
+
+
+class SupportTypePage(BaseModel):
+    items: list[SupportType]
+    total: int
+    page: int
+    page_size: int
+
+
+class GroupTypes(BaseModel):
+    available: bool
+    items: list[SupportType]
+
+
+from schemas.staff import StaffTicket, StaffPage, Escalation
+
+
+class ManagerTicket(StaffTicket):
+    pending_escalation: Escalation | None = None
+
+
+class ManagerTicketPage(StaffPage):
+    items: list[ManagerTicket]
